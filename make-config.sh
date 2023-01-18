@@ -48,6 +48,8 @@ SBCL_CONTRIB_BLOCKLIST=${SBCL_CONTRIB_BLOCKLIST:-""}
 perform_host_lisp_check=no
 fancy=false
 some_options=false
+android=false
+ndk_api=21
 for option
 do
   optarg_ok=true
@@ -92,6 +94,10 @@ do
 	;;
       --with)
         WITH_FEATURES="$WITH_FEATURES :$optarg"
+        if [ "$optarg" = "android" ]
+        then
+                android=true
+        fi
         ;;
       --without)
         WITHOUT_FEATURES="$WITHOUT_FEATURES :$optarg"
@@ -99,7 +105,13 @@ do
         in *"$optarg"*)
                SBCL_CONTRIB_BLOCKLIST="$SBCL_CONTRIB_BLOCKLIST $optarg"
         ;; esac
-	;;
+        ;;
+      --ndk-api)
+        $optarg_ok && ndk_api=$optarg
+        ;;
+      --ndk)
+        $optarg_ok && NDK=$optarg
+        ;;
       --fancy)
         WITH_FEATURES="$WITH_FEATURES $FANCY_FEATURES"
         # Lower down we add :sb-thread for platforms where it can be built.
@@ -366,7 +378,14 @@ echo //ensuring the existence of output/ directory
 if [ ! -d output ] ; then mkdir output; fi
 
 echo //guessing default target CPU architecture from host architecture
-case `uname -m` in
+if $android
+then
+    uname_arch=`adb shell uname -m`
+else
+    uname_arch=`uname -m`
+fi
+
+case $uname_arch in
     *86) guessed_sbcl_arch=x86 ;;
     i86pc) guessed_sbcl_arch=x86 ;;
     *x86_64) guessed_sbcl_arch=x86-64 ;;
@@ -430,6 +449,24 @@ if [ "$sbcl_arch" = "" ] ; then
     echo "can't guess target SBCL architecture, please specify --arch=<name>"
     exit 1
 fi
+
+if $android
+then
+    case $sbcl_arch in
+        arm64) ndk_target_tag=aarch64-linux-android ;;
+        arm) ndk_target_tag=armv7a-linux-androideabi ;;
+        x86) ndk_target_tag=i686-linux-android ;;
+        x86-64) ndk_target_tag=x86_64-linux-android ;;
+    esac
+    . ./adb-run.sh
+    export CC=$NDK/toolcahins/llvm/prebuilt/$sbcl_os-x86_64/$ndk_target_tag$ndk_api-clang
+    echo "android=$android; export android" >> output/build-config
+    echo "CC=$CC; export CC" >> output/build-config
+    echo "NDK=$NDK" > output/ndk-config
+    echo "HOST_TAG=$sbcl_os-x86_64" >> output/ndk-config
+    echo "API=$ndk_api" >> output/ndk-config
+fi
+
 if $fancy
 then
     # If --fancy, enable threads on platforms where they can be built.
@@ -526,10 +563,16 @@ case "$sbcl_os" in
 		printf ' :largefile' >> $ltf
 		;;
         esac
-
-        link_or_copy Config.$sbcl_arch-linux Config
-        link_or_copy $sbcl_arch-linux-os.h target-arch-os.h
-        link_or_copy linux-os.h target-os.h
+        if $android
+        then
+                link_or_copy Config.$sbcl_arch-android Config
+                link_or_copy $sbcl_arch-android-os.h target-arch-os.h
+                link_or_copy android-os.h target-os.h
+        else
+                link_or_copy Config.$sbcl_arch-linux Config
+                link_or_copy $sbcl_arch-linux-os.h target-arch-os.h
+                link_or_copy linux-os.h target-os.h
+        fi
         ;;
     haiku)
         printf ' :unix :haiku :elf :int4-breakpoints' >> $ltf
@@ -697,10 +740,16 @@ esac
 # cross-compilers!
 #
 # FIXME: integrate to grovel-features, mayhaps
-$GNUMAKE -C tools-for-build determine-endianness -I ../src/runtime
-tools-for-build/determine-endianness >> $ltf
+if $android
+then
+        $CC tools-for-build/determine-endianness.c -o tools-for-build/determine-endianness
+        adb_run tools-for-build/determine-endianness >> $ltf
+else
+        $GNUMAKE -C tools-for-build determine-endianness -I ../src/runtime
+        tools-for-build/determine-endianness >> $ltf
+fi
 
-export sbcl_os sbcl_arch
+export sbcl_os sbcl_arch android
 sh tools-for-build/grovel-features.sh >> $ltf
 
 echo //finishing $ltf

@@ -1,4 +1,7 @@
 # Automated platform feature testing
+
+. ./adb-run.sh
+
 cd ./tools-for-build > /dev/null
 
 # FIXME: Use this to test for dlopen presence and hence
@@ -12,8 +15,15 @@ featurep() {
     bin="$1-test"
     featurename=${2:-$1}
     rm -f $bin
-    $GNUMAKE $bin -I ../src/runtime > /dev/null 2>&1 && echo "input" | ./$bin> /dev/null 2>&1
-    if [ "$?" -eq 104 ]
+    if $android
+    then
+        $CC -I../src/runtime -ldl -o $bin $bin.c > /dev/null 2>&1
+	exit_code=`adb_run_exit_code $bin`
+    else
+        $GNUMAKE $bin -I ../src/runtime > /dev/null 2>&1 && echo "input" | ./$bin> /dev/null 2>&1
+	exit_code="$?"
+    fi
+    if [ "$exit_code" -eq 104 ]
     then
         printf " :$featurename"
     fi
