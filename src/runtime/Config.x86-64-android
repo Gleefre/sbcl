@@ -11,7 +11,7 @@
 
 -include ../../output/ndk-config
 
-TARGET_TAG=aarch64-linux-android
+TARGET_TAG=x86_64-linux-android
 TOOLCHAIN=${NDK}/toolchains/llvm/prebuilt/${HOST_TAG}
 
 CC=${TOOLCHAIN}/bin/${TARGET_TAG}${API}-clang
