@@ -11,8 +11,11 @@ contains only master branch, and `git describe` doesn't work anymore.
 You can create a fake version.lisp-expr file like this:
     $ echo '"2.3.0.165-325986bb1-WIP"' > version.lisp-expr
 
-To change make-config.sh parameters you need to edit them manually in
-the script at the moment.
+You can pass same parameters to `make-android.sh` as to `make.sh`
+There are two additional parameters:
+--ndk=<path-to-your-ndk>
+--ndk-api=<integer-android-api-to-use>
+
 To compile for architecture `ARCH` you need to have the following files:
 src/runtime/Config.ARCH-android
 src/runtime/ARCH-android-os.h
