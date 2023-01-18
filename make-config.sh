@@ -106,10 +106,10 @@ do
                SBCL_CONTRIB_BLOCKLIST="$SBCL_CONTRIB_BLOCKLIST $optarg"
         ;; esac
         ;;
-      --ndk-api)
+      --ndk-api=)
         $optarg_ok && ndk_api=$optarg
         ;;
-      --ndk)
+      --ndk=)
         $optarg_ok && NDK=$optarg
         ;;
       --fancy)
@@ -459,7 +459,7 @@ then
         x86-64) ndk_target_tag=x86_64-linux-android ;;
     esac
     . ./adb-run.sh
-    export CC=$NDK/toolcahins/llvm/prebuilt/$sbcl_os-x86_64/$ndk_target_tag$ndk_api-clang
+    export CC=$NDK/toolchains/llvm/prebuilt/$sbcl_os-x86_64/bin/$ndk_target_tag$ndk_api-clang
     echo "android=$android; export android" >> output/build-config
     echo "CC=$CC; export CC" >> output/build-config
     echo "NDK=$NDK" > output/ndk-config
