@@ -6,6 +6,10 @@ through adb. An emulator can be used instead.
 To compile sbcl you need to run `make-android.sh` script.
 You need to specify path to your NDK, for example:
 NDK=~/android-sdk/ndk/21.4.7075529 ./make-android.sh
+You also need create a fake version.lisp-expr file, since this fork
+contains only master branch, and `git describe` doesn't work anymore.
+You can create a fake version.lisp-expr file like this:
+    $ echo '"2.3.0.165-325986bb1-WIP"' > version.lisp-expr
 
 To change make-config.sh parameters you need to edit them manually in
 the script at the moment.
