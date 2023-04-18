@@ -466,6 +466,7 @@ then
     echo "CC=$CC; export CC" >> output/build-config
     echo "NDK=$NDK" > output/ndk-config
     echo "HOST_TAG=$HOST_TAG" >> output/ndk-config
+    echo "TARGET_TAG=$TARGET_TAG" >> output/ndk-config
     echo "ANDROID_API=$ANDROID_API" >> output/ndk-config
 fi
 
