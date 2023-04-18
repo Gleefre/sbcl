@@ -11,10 +11,7 @@
 
 -include ../../output/ndk-config
 
-TARGET_TAG=aarch64-linux-android
-TOOLCHAIN=${NDK}/toolchains/llvm/prebuilt/${HOST_TAG}
-
-CC=${TOOLCHAIN}/bin/${TARGET_TAG}${API}-clang
+CC=${TOOLCHAIN}/bin/${TARGET_TAG}${ANDROID_API}-clang
 LD=${TOOLCHAIN}/${TARGET_TAG}/bin/ld
 
 CFLAGS += -march=armv8
@@ -25,7 +22,7 @@ ASSEM_SRC = arm64-assem.S
 ARCH_SRC = arm64-arch.c
 
 OS_SRC = linux-os.c linux-mman.c arm64-linux-os.c android-os.c arm64-android-os.c
-OS_LIBS = -ldl -llog
+OS_LIBS = -ldl
 
 CFLAGS += -std=gnu99 -Wunused-parameter -fno-omit-frame-pointer -momit-leaf-frame-pointer
 LINKFLAGS += -Wl,--export-dynamic
@@ -36,6 +33,8 @@ endif
 
 ifdef LISP_FEATURE_SB_CORE_COMPRESSION
   OS_LIBS += -lzstd
+  CPPFLAGS += -I../../android-libs
+  LINKFLAGS += -L../../android-libs
 endif
 
 ifdef LISP_FEATURE_LARGEFILE
