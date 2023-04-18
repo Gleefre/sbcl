@@ -464,9 +464,9 @@ then
     export CC=$NDK/toolchains/llvm/prebuilt/$HOST_TAG/bin/$TARGET_TAG$ANDROID_API-clang
     echo "android=$android; export android" >> output/build-config
     echo "CC=$CC; export CC" >> output/build-config
-    echo "NDK=$NDK; export NDK" >> output/build-config
-    echo "HOST_TAG=$HOST_TAG; export HOST_TAG" >> output/build-config
-    echo "ANDROID_API=$ANDROID_API; export ANDROID_API" >> output/build-config
+    echo "NDK=$NDK" > output/ndk-config
+    echo "HOST_TAG=$HOST_TAG" >> output/ndk-config
+    echo "ANDROID_API=$ANDROID_API" >> output/ndk-config
 fi
 
 if $fancy
