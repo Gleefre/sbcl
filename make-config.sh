@@ -567,13 +567,13 @@ case "$sbcl_os" in
         esac
         if $android
         then
-                link_or_copy Config.$sbcl_arch-android Config
-                link_or_copy $sbcl_arch-android-os.h target-arch-os.h
-                link_or_copy android-os.h target-os.h
+            link_or_copy Config.$sbcl_arch-android Config
+            link_or_copy $sbcl_arch-android-os.h target-arch-os.h
+            link_or_copy android-os.h target-os.h
         else
-                link_or_copy Config.$sbcl_arch-linux Config
-                link_or_copy $sbcl_arch-linux-os.h target-arch-os.h
-                link_or_copy linux-os.h target-os.h
+            link_or_copy Config.$sbcl_arch-linux Config
+            link_or_copy $sbcl_arch-linux-os.h target-arch-os.h
+            link_or_copy linux-os.h target-os.h
         fi
         ;;
     haiku)
