@@ -99,12 +99,6 @@ void disable_lossage_handler(void)
 static
 void print_message(char *fmt, va_list ap)
 {
-#ifdef LISP_FEATURE_ANDROID
-    LOGE(" in SBCL pid %d" THREAD_ID_LABEL, getpid(), THREAD_ID_VALUE);
-    if (fmt) {
-        LOGE(fmt, ap);
-    }
-#endif
     fprintf(stderr, " in SBCL pid %d" THREAD_ID_LABEL, getpid(), THREAD_ID_VALUE);
     if (fmt) {
         fprintf(stderr, ":\n");
