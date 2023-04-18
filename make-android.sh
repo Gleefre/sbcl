@@ -3,8 +3,6 @@ set -e
 
 build_started=`date`
 
-echo '"ANDROID-WIP"' > version.lisp-expr
-
 ./make-config.sh "$@" --with-android --without-gcc-tls --check-host-lisp || exit $?
 
 . output/prefix.def
@@ -17,15 +15,16 @@ $SBCL_XC_HOST < tools-for-build/canonicalize-whitespace.lisp || exit 1
 ./make-host-2.sh
 
 rm -f sbcl.zip
-zip -r sbcl.zip *
+zip -r sbcl.zip * > /dev/null
 adb shell rm -rf /data/local/tmp/sbcl
 adb shell rm -f /data/local/tmp/sbcl.zip
 adb shell mkdir /data/local/tmp/sbcl
 adb push sbcl.zip /data/local/tmp/sbcl
 rm sbcl.zip
-adb shell "cd /data/local/tmp/sbcl ; unzip sbcl.zip ; rm sbcl.zip"
-adb shell "cd /data/local/tmp/sbcl ; ./make-target-2.sh"
+adb shell "cd /data/local/tmp/sbcl ; unzip sbcl.zip > /dev/null ; rm sbcl.zip"
+adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=/data/local/tmp/sbcl/android-libs ./make-target-2.sh"
 
+# Hack needed to replace SB-GROVEL:RUN-C-COMPILER
 compile_one() {
     bin=temp-compile-from-android
     adb pull /data/local/tmp/sbcl/contrib/asdf/$2 $bin.c
