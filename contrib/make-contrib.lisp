@@ -13,13 +13,10 @@
 (defun run-defs-to-lisp (inputs output)
   (flet ((invoke (string &rest args)
            #+android
-           (if (string= string "RUN-C-COMPILER")
-               (progn
-                 (format t "~a ~{~a~^ ~}~%" string args)
-                 (sleep 5) ;; FIXME: should check if the file was compiled
-                 0)
-               (apply (find-symbol string "SB-GROVEL") args))
-           #-android
+           (when (string= string "RUN-C-COMPILER")
+             (format t "~a ~{~a~^ ~}~%" string args)
+             (sleep 5) ;; FIXME: should check if the file was compiled
+             (return-from invoke 0))
            (apply (find-symbol string "SB-GROVEL") args)))
     (let ((c-file (merge-pathnames "runme.c" output))
           (all-headers)
