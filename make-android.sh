@@ -22,7 +22,8 @@ adb shell mkdir /data/local/tmp/sbcl
 adb push sbcl.zip /data/local/tmp/sbcl
 rm sbcl.zip
 adb shell "cd /data/local/tmp/sbcl ; unzip sbcl.zip > /dev/null ; rm sbcl.zip"
-adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=/data/local/tmp/sbcl/android-libs ./make-target-2.sh"
+
+adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=/data/local/tmp/sbcl/android-libs sh make-target-2.sh"
 
 # Hack needed to replace SB-GROVEL:RUN-C-COMPILER
 compile_one() {
@@ -35,7 +36,7 @@ compile_one() {
     rm $bin.c
 }
 
-adb shell "cd /data/local/tmp/sbcl ; sh make-target-contrib-android.sh" | \
+adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=/data/local/tmp/sbcl/android-libs sh make-target-contrib-android.sh" | \
     while read line ;
       do echo "$line" ;
       echo $line | grep "RUN-C-COMPILER" | while read line ; do compile_one $line ; done ;

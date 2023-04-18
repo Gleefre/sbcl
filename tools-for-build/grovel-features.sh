@@ -1,6 +1,6 @@
 # Automated platform feature testing
 cd ./tools-for-build > /dev/null
-. android_run.sh
+. ./android_run.sh
 
 # FIXME: Use this to test for dlopen presence and hence
 # load-shared-object buildability

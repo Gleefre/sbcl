@@ -11,7 +11,7 @@
 
 -include ../../output/ndk-config
 
-CC=${TOOLCHAIN}/bin/${TARGET_TAG}${API}-clang
+CC=${TOOLCHAIN}/bin/${TARGET_TAG}${ANDROID_API}-clang
 LD=${TOOLCHAIN}/${TARGET_TAG}/bin/ld
 
 # NDK implements pthread in libc so there is no need to add it to OS_LIBS

@@ -45,6 +45,7 @@ $GNUMAKE $SBCL_MAKE_JOBS -C src/runtime all
 if $android
 then
     ( cd tools-for-build; $CC -I../src/runtime -ldl -o grovel-headers grovel-headers.c)
+    . ./tools-for-build/android_run.sh
     android_run tools-for-build/grovel-headers > output/stuff-groveled-from-headers.lisp
 else
     ( cd tools-for-build; $GNUMAKE -I../src/runtime grovel-headers )
