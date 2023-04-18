@@ -49,6 +49,9 @@ perform_host_lisp_check=no
 fancy=false
 some_options=false
 android=false
+if [ -z $ANDROID_API ]; then
+    ANDROID_API=21
+fi
 for option
 do
   optarg_ok=true
