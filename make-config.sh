@@ -461,12 +461,14 @@ then
         x86-64) TARGET_TAG=x86_64-linux-android ;;
     esac
     HOST_TAG=$sbcl_os-x86_64
-    export CC=$NDK/toolchains/llvm/prebuilt/$HOST_TAG/bin/$TARGET_TAG$ANDROID_API-clang
+    TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/$HOST_TAG
+    export CC=$TOOLCHAIN/bin/$TARGET_TAG$ANDROID_API-clang
     echo "android=$android; export android" >> output/build-config
     echo "CC=$CC; export CC" >> output/build-config
     echo "NDK=$NDK" > output/ndk-config
     echo "HOST_TAG=$HOST_TAG" >> output/ndk-config
     echo "TARGET_TAG=$TARGET_TAG" >> output/ndk-config
+    echo "TOOLCHAIN=$TOOLCHAIN" >> output/ndk-config
     echo "ANDROID_API=$ANDROID_API" >> output/ndk-config
 fi
 
