@@ -1,11 +1,16 @@
 # Automated platform feature testing
 
-. ./adb-run.sh
-
 cd ./tools-for-build > /dev/null
 
 # FIXME: Use this to test for dlopen presence and hence
 # load-shared-object buildability
+
+android_run_for_exit_code() {
+    adb push $1 /data/local/tmp/$1 > /dev/null
+    adb shell chmod +x /data/local/tmp/$1 > /dev/null 2>&1
+    adb shell "echo input | ./data/local/tmp/$1 > /dev/null 2>&1 ; echo \"\$?\"" 2>/dev/null
+    adb shell rm /data/local/tmp/$1 > /dev/null 2>&1
+}
 
 # Assumes the presence of $1-test.c, which when built and
 # run should return with 104 if the feature is present.
@@ -18,7 +23,7 @@ featurep() {
     if $android
     then
         $CC -I../src/runtime -ldl -o $bin $bin.c > /dev/null 2>&1
-	exit_code=`adb_run_exit_code $bin`
+	exit_code=`android_run_for_exit_code $bin`
     else
         $GNUMAKE $bin -I ../src/runtime > /dev/null 2>&1 && echo "input" | ./$bin> /dev/null 2>&1
 	exit_code="$?"
