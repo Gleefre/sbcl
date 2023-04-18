@@ -49,7 +49,6 @@ perform_host_lisp_check=no
 fancy=false
 some_options=false
 android=false
-ndk_api=21
 for option
 do
   optarg_ok=true
@@ -96,7 +95,7 @@ do
         WITH_FEATURES="$WITH_FEATURES :$optarg"
         if [ "$optarg" = "android" ]
         then
-                android=true
+            android=true
         fi
         ;;
       --without)
@@ -105,9 +104,9 @@ do
         in *"$optarg"*)
                SBCL_CONTRIB_BLOCKLIST="$SBCL_CONTRIB_BLOCKLIST $optarg"
         ;; esac
-        ;;
-      --ndk-api=)
-        $optarg_ok && ndk_api=$optarg
+	;;
+      --android-api=)
+        $optarg_ok && ANDROID_API=$optarg
         ;;
       --ndk=)
         $optarg_ok && NDK=$optarg
@@ -453,18 +452,18 @@ fi
 if $android
 then
     case $sbcl_arch in
-        arm64) ndk_target_tag=aarch64-linux-android ;;
-        arm) ndk_target_tag=armv7a-linux-androideabi ;;
-        x86) ndk_target_tag=i686-linux-android ;;
-        x86-64) ndk_target_tag=x86_64-linux-android ;;
+        arm64) TARGET_TAG=aarch64-linux-android ;;
+        arm) TARGET_TAG=armv7a-linux-androideabi ;;
+        x86) TARGET_TAG=i686-linux-android ;;
+        x86-64) TARGET_TAG=x86_64-linux-android ;;
     esac
-    . ./adb-run.sh
-    export CC=$NDK/toolchains/llvm/prebuilt/$sbcl_os-x86_64/bin/$ndk_target_tag$ndk_api-clang
+    HOST_TAG=$sbcl_os-x86_64
+    export CC=$NDK/toolchains/llvm/prebuilt/$HOST_TAG/bin/$TARGET_TAG$ANDROID_API-clang
     echo "android=$android; export android" >> output/build-config
     echo "CC=$CC; export CC" >> output/build-config
-    echo "NDK=$NDK" > output/ndk-config
-    echo "HOST_TAG=$sbcl_os-x86_64" >> output/ndk-config
-    echo "API=$ndk_api" >> output/ndk-config
+    echo "NDK=$NDK; export NDK" >> output/build-config
+    echo "HOST_TAG=$HOST_TAG; export HOST_TAG" >> output/build-config
+    echo "ANDROID_API=$ANDROID_API; export ANDROID_API" >> output/build-config
 fi
 
 if $fancy
@@ -625,6 +624,9 @@ case "$sbcl_os" in
         if [ $sbcl_arch = "arm64" ]; then
             printf ' :darwin-jit :gcc-tls' >> $ltf
         fi
+        if $android; then
+            echo "Android build is unsupported on darwin"
+        fi
         link_or_copy $sbcl_arch-darwin-os.h target-arch-os.h
         link_or_copy bsd-os.h target-os.h
         link_or_copy Config.$sbcl_arch-darwin Config
@@ -743,7 +745,8 @@ esac
 if $android
 then
         $CC tools-for-build/determine-endianness.c -o tools-for-build/determine-endianness
-        adb_run tools-for-build/determine-endianness >> $ltf
+        . tools-for-build/android_run.sh
+        android_run tools-for-build/determine-endianness >> $ltf
 else
         $GNUMAKE -C tools-for-build determine-endianness -I ../src/runtime
         tools-for-build/determine-endianness >> $ltf
