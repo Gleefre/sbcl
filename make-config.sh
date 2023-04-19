@@ -690,6 +690,11 @@ cd "$original_dir"
 # (define-feature :c-stack-grows-downwards-not-upwards (features)
 #   (member :x86 features))
 
+if $android
+then
+    . tools-for-build/android_run.sh
+fi
+
 case "$sbcl_arch" in
   x86)
     if [ "$sbcl_os" = "darwin" ]; then
@@ -709,8 +714,15 @@ case "$sbcl_arch" in
   x86-64)
     printf ' :sb-simd-pack :sb-simd-pack-256 :avx2' >> $ltf # not mandatory
 
-    if ! $GNUMAKE -C tools-for-build avx2 2> /dev/null || tools-for-build/avx2 ; then
-       SBCL_CONTRIB_BLOCKLIST="$SBCL_CONTRIB_BLOCKLIST sb-simd"
+    if $android; then
+        $GNUMAKE -C tools-for-build avx2 2> /dev/null
+        if ! android_run tools-for-build/avx2 ; then
+            SBCL_CONTRIB_BLOCKLIST="$SBCL_CONTRIB_BLOCKLIST sb-simd"
+        fi
+    else
+        if ! $GNUMAKE -C tools-for-build avx2 2> /dev/null || tools-for-build/avx2 ; then
+            SBCL_CONTRIB_BLOCKLIST="$SBCL_CONTRIB_BLOCKLIST sb-simd"
+        fi
     fi
 
     case "$sbcl_os" in
@@ -757,7 +769,6 @@ esac
 if $android
 then
         $CC tools-for-build/determine-endianness.c -o tools-for-build/determine-endianness
-        . tools-for-build/android_run.sh
         android_run tools-for-build/determine-endianness >> $ltf
 else
         $GNUMAKE -C tools-for-build determine-endianness -I ../src/runtime
