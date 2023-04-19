@@ -5,7 +5,7 @@ export SBCL_TOP="../.."
 export SBCL_HOME="$SBCL_TOP/obj/sbcl-home"
 export SBCL="$SBCL_TOP/src/runtime/sbcl --noinform --core $SBCL_TOP/output/sbcl.core \
     --lose-on-corruption --disable-debugger --no-sysinit --no-userinit"
-export UNAME=$(uname -s)
+export UNAME=Linux
 export DEST=$SBCL_TOP/obj/sbcl-home/contrib
 
 build_asdf () {
