@@ -26,6 +26,7 @@ OS_LIBS = -ldl
 
 CFLAGS += -std=gnu99 -Wunused-parameter -fno-omit-frame-pointer -momit-leaf-frame-pointer
 LINKFLAGS += -Wl,--export-dynamic
+SOFLAGS += -Wl,-soname,libsbcl.so
 
 ifdef LISP_FEATURE_GENCGC
   GC_SRC = fullcgc.c gencgc.c traceroot.c
@@ -33,8 +34,10 @@ endif
 
 ifdef LISP_FEATURE_SB_CORE_COMPRESSION
   OS_LIBS += -lzstd
-  CPPFLAGS += -I../../android-libs
+  CFLAGS += -I../../android-libs
+  DEPEND_FLAGS += -I../../android-libs
   LINKFLAGS += -L../../android-libs
+  SOFLAGS += -L../../android-libs
 endif
 
 ifdef LISP_FEATURE_LARGEFILE
