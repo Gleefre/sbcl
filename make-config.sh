@@ -456,8 +456,14 @@ if $android
 then
     case $sbcl_arch in
         arm64) TARGET_TAG=aarch64-linux-android ;;
-        arm) TARGET_TAG=armv7a-linux-androideabi ;;
-        x86) TARGET_TAG=i686-linux-android ;;
+        arm) TARGET_TAG=armv7a-linux-androideabi
+             echo "Unsupported configuration"
+             exit 1
+             ;;
+        x86) TARGET_TAG=i686-linux-android
+             echo "Unsupported configuration"
+             exit 1
+             ;;
         x86-64) TARGET_TAG=x86_64-linux-android ;;
     esac
     HOST_TAG=$sbcl_os-x86_64
