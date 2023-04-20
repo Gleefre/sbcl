@@ -351,6 +351,9 @@ link_or_copy() {
       else
          cp -r "$1" "$2"
       fi
+   elif $android ; then
+       # adb push doesn't like symlinks on unrooted devices.
+       cp -r "$1" "$2"
    else
        ln -s "$1" "$2"
    fi

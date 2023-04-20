@@ -14,14 +14,7 @@ $SBCL_XC_HOST < tools-for-build/canonicalize-whitespace.lisp || exit 1
 ./make-target-1.sh
 ./make-host-2.sh
 
-rm -f sbcl.zip
-zip -r sbcl.zip * > /dev/null
-adb shell rm -rf /data/local/tmp/sbcl
-adb shell rm -f /data/local/tmp/sbcl.zip
-adb shell mkdir /data/local/tmp/sbcl
-adb push sbcl.zip /data/local/tmp/sbcl
-rm sbcl.zip
-adb shell "cd /data/local/tmp/sbcl ; unzip sbcl.zip > /dev/null ; rm sbcl.zip"
+adb push ./ /data/local/tmp/sbcl/
 
 adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=/data/local/tmp/sbcl/android-libs sh make-target-2.sh"
 
@@ -30,7 +23,8 @@ compile_one() {
     bin=temp-compile-from-android
     adb pull /data/local/tmp/sbcl/contrib/asdf/$2 $bin.c
     $CC $bin.c -o $bin
-    adb push $bin /data/local/tmp/sbcl/contrib/asdf/$3
+    dest=$(echo $3 | sed 's/\r//g')  # On older android line terminates with \r
+    adb push $bin /data/local/tmp/sbcl/contrib/asdf/$dest
     echo "done"
     rm $bin
     rm $bin.c
