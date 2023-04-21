@@ -175,6 +175,14 @@ os_dlsym_default(char *name)
     void *frob = dlsym(RTLD_DEFAULT, name);
     return frob;
 }
+
+extern
+void *
+get_rtld_default(char *name)
+{
+    void *frob = RTLD_DEFAULT;
+    return frob;
+}
 #endif
 
 int alien_linkage_table_n_prelinked;
