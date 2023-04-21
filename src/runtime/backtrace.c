@@ -365,11 +365,11 @@ lisp_backtrace(int nframes)
     do {
         if (!lisp_frame_previous(thread, &info)) {
             if (info.frame) // 0 is normal termination of the call chain
-                LOGI("Bad frame pointer %p [valid range=%p..%p]\n", info.frame,
+                LOGE("Bad frame pointer %p [valid range=%p..%p]\n", info.frame,
                        thread->control_stack_start, thread->control_stack_end);
             break;
         }
-        LOGI("%4d: ", i);
+        LOGE("%4d: ", i);
         // Print spaces to keep the alignment nice
         if (info.interrupted
 #ifdef reg_LRA
@@ -384,29 +384,29 @@ lisp_backtrace(int nframes)
             putchar(']');
             if (!(info.lra == NIL && info.interrupted)) putchar(' ');
         } else {
-            LOGI("    ");
+            LOGE("    ");
         }
-        LOGI("%p ", info.frame);
+        LOGE("%p ", info.frame);
         void* absolute_pc = 0;
         if (info.code) {
             absolute_pc = (char*)info.code + info.pc;
-            LOGI("pc=%p {%p+%04x} ", absolute_pc, info.code, (int)info.pc);
+            LOGE("pc=%p {%p+%04x} ", absolute_pc, info.code, (int)info.pc);
         } else {
             absolute_pc = (char*)info.pc;
-            LOGI("pc=%p ", absolute_pc);
+            LOGE("pc=%p ", absolute_pc);
         }
 
         // If LRA does not match the PC, print it. This should not happen.
         if (info.lra != make_lispobj(absolute_pc, OTHER_POINTER_LOWTAG)
             && info.lra != NIL)
-            LOGI("LRA=%p ", (void*)info.lra);
+            LOGE("LRA=%p ", (void*)info.lra);
 
         int fpvalid = (lispobj*)info.frame >= thread->control_stack_start
           && (lispobj*)info.frame < thread->control_stack_end;
 
         // If the FP is invalid, then quite likely we'd crash trying to find a
         // compiled-debug-fun because info.code is a wild pointer
-        if (!fpvalid) { LOGI(" BAD FRAME\n"); break; }
+        if (!fpvalid) { LOGE(" BAD FRAME\n"); break; }
 
         if (info.code) {
             struct compiled_debug_fun *df;
@@ -417,13 +417,13 @@ lisp_backtrace(int nframes)
                 // I can't imagine a scenario where we have info.code
                 // but do not have an absolute_pc, or debug-fun can't be found.
                 // Anyway, we can uniquely identify code by serial# now.
-                LOGI("{code_serialno=%x}", code_serialno(info.code));
+                LOGE("{code_serialno=%x}", code_serialno(info.code));
         }
 
         putchar('\n');
 
     } while (++i <= nframes);
-    if (footnotes) LOGI("Note: [I] = interrupted"
+    if (footnotes) LOGE("Note: [I] = interrupted"
 #ifdef reg_LRA
                           ", [*] = no LRA"
 #endif
