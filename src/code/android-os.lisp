@@ -84,3 +84,9 @@
          (loop with line while (setf line (read-line stream nil))
                when (eql (search marker line) 0)
                return (string-trim " " (subseq line (1+ (position #\: line))))))))))
+
+(in-package "SB-ALIEN")
+
+(define-alien-routine ("get_pointer_from_c" %get-pointer-from-c) system-area-pointer)
+(defun get-pointer-from-c ()
+  (%get-pointer-from-c))
