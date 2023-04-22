@@ -3,6 +3,8 @@ set -e
 
 build_started=`date`
 
+echo '"ANDROID-WIP"' > version.lisp-expr
+
 ./make-config.sh "$@" --with-android --without-gcc-tls --check-host-lisp || exit $?
 
 . output/prefix.def
