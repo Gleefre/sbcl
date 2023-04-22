@@ -81,5 +81,3 @@
                     err (dlerror))
               (when (or (not (zerop result)) (not err))
                 (return result))))))))
-
-
