@@ -291,6 +291,7 @@ fi
 if [ -n "$SBCL_TARGET_LOCATION" ]; then
     echo "SBCL_TARGET_LOCATION=\"$SBCL_TARGET_LOCATION\"; export SBCL_TARGET_LOCATION" >> output/build-config
 fi
+echo "android=$android; export android" >> output/build-config
 
 # And now, sorting out the per-target dependencies...
 
@@ -472,7 +473,6 @@ then
     HOST_TAG=$sbcl_os-x86_64
     TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/$HOST_TAG
     export CC=$TOOLCHAIN/bin/$TARGET_TAG$ANDROID_API-clang
-    echo "android=$android; export android" >> output/build-config
     echo "CC=$CC; export CC" >> output/build-config
     echo "NDK=$NDK" > output/ndk-config
     echo "HOST_TAG=$HOST_TAG" >> output/ndk-config
