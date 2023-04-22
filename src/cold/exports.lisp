@@ -1703,7 +1703,8 @@ of SBCL which maintained the CMU-CL-style split into two packages.)")
            "UTF8-STRING"
            "VALUES"
            "VOID"
-           "WITH-ALIEN"))
+           "WITH-ALIEN"
+           "GET-POINTER-FROM-C"))
 
 (defpackage* "SB-ALIEN-INTERNALS"
   (:documentation "private: stuff for implementing ALIENs and friends")
