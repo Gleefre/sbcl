@@ -13,17 +13,15 @@
 
 (defvar *special-constant-variables* nil)
 
-(defun %constantp (form environment envp)
+(defun %constantp (form environment)
   ;; Pick off quasiquote prior to macroexpansion.
   (when (typep form '(cons (eql quasiquote) (cons t null)))
     (return-from %constantp
-      (constant-quasiquote-form-p (cadr form) environment envp)))
-  (let ((form (if envp
-                  (handler-case
-                      (%macroexpand form environment)
-                    (error ()
-                      (return-from %constantp)))
-                  form)))
+      (constant-quasiquote-form-p (cadr form) environment)))
+  (let ((form (handler-case
+                  (%macroexpand form environment)
+                (error ()
+                  (return-from %constantp)))))
     (typecase form
       ;; This INFO test catches KEYWORDs as well as explicitly
       ;; DEFCONSTANT symbols.
@@ -31,37 +29,34 @@
        (or (eq (info :variable :kind form) :constant)
            (constant-special-variable-p form)))
       (list
-       (let ((answer (constant-special-form-p form environment envp)))
+       (let ((answer (constant-special-form-p form environment)))
          (if (eq answer :maybe)
-             (values (constant-function-call-p form environment envp))
+             (values (constant-function-call-p form environment))
              answer)))
       (t t))))
 
-(defun constant-quasiquote-form-p (expr environment envp)
+(defun constant-quasiquote-form-p (expr environment)
   ;; This is an utter cinch because we haven't macroexpanded.
   ;; Parse just enough to recognize (DEFTYPE <T2> () (<T1> ,THING)) etc.
   (named-let recurse ((expr expr))
     (cond ((atom expr)
            (cond ((comma-p expr)
-                  (%constantp (comma-expr expr) environment envp))
+                  (%constantp (comma-expr expr) environment))
                  ((simple-vector-p expr) (every #'recurse expr))
                  (t)))
           ((eq (car expr) 'quasiquote) nil) ; give up
           (t (and (recurse (car expr)) (recurse (cdr expr)))))))
 
-(defun %constant-form-value (form environment envp)
-  (let ((form (if (or envp
-                      (typep form '(cons (eql quasiquote) (cons t null))))
-                  (%macroexpand form environment)
-                  form)))
+(defun %constant-form-value (form environment)
+  (let ((form (%macroexpand form environment)))
     (typecase form
       (symbol
        (symbol-value form))
       (list
        (multiple-value-bind (specialp value)
-           (constant-special-form-value form environment envp)
+           (constant-special-form-value form environment)
          (if specialp value (constant-function-call-value
-                             form environment envp))))
+                             form environment))))
       (t
        form))))
 
@@ -70,7 +65,7 @@
 
 ;;; FIXME: It would be nice to deal with inline functions
 ;;; too.
-(defun constant-function-call-p (form environment envp)
+(defun constant-function-call-p (form environment)
   (let ((name (car form)))
     (if (and (legal-fun-name-p name)
              (eq :function (info :function :kind name))
@@ -78,20 +73,20 @@
                (and info (ir1-attributep (fun-info-attributes info)
                                          foldable)))
              (and (every (lambda (arg)
-                           (%constantp arg environment envp))
+                           (%constantp arg environment))
                          (cdr form))))
         ;; Even though the function may be marked as foldable
         ;; the call may still signal an error -- eg: (CAR 1).
         (handler-case
-            (values t (constant-function-call-value form environment envp))
+            (values t (constant-function-call-value form environment))
           (error ()
             (values nil nil)))
         (values nil nil))))
 
-(defun constant-function-call-value (form environment envp)
+(defun constant-function-call-value (form environment)
   (apply (fdefinition (car form))
          (mapcar (lambda (arg)
-                   (%constant-form-value arg environment envp))
+                   (%constant-form-value arg environment))
                  (cdr form))))
 
 ;;;; NOTE!!!
@@ -247,8 +242,8 @@
 
 (macrolet
     ((expand-cases (expr-selector default-clause)
-       `(flet ((constantp* (x) (%constantp x environment envp))
-               (constant-form-value* (x) (%constant-form-value x environment envp)))
+       `(flet ((constantp* (x) (%constantp x environment))
+               (constant-form-value* (x) (%constant-form-value x environment)))
           (declare (optimize speed) (ignorable #'constantp*)
                    (ftype (sfunction (t) t) constantp* constant-form-value*))
           (let ((args (cdr (truly-the list form))))
@@ -263,12 +258,12 @@
               (t
                ,default-clause))))))
 
-  (defun constant-special-form-p (form environment envp)
+  (defun constant-special-form-p (form environment)
     (let (result)
       (tagbody (setq result (expand-cases 1 :maybe)) fail)
       result))
 
-  (defun constant-special-form-value (form environment envp)
+  (defun constant-special-form-value (form environment)
     (let ((result))
       (tagbody
          (setq result (expand-cases 2 (return-from constant-special-form-value

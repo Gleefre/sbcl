@@ -1040,10 +1040,10 @@ other."
                     (values-subtypep (make-single-value-type (leaf-type value))
                                      type))
                (and (not (fun-designator-type-p type))
-                    (constantp value)
+                    (constantp value *lexenv*)
                     (or (not (values-type-p type))
                         (values-type-may-be-single-value-p type))
-                    (ctypep (constant-form-value value)
+                    (ctypep (constant-form-value value *lexenv*)
                             (single-value-type type))))
            (ir1-convert start next result value)
            nil) ;; NIL is important, older SBCLs miscompiled (values &optional x) casts

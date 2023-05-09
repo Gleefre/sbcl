@@ -329,7 +329,7 @@
               ;; If the SATISFIES function is not foldable, we cannot answer!
               (dx-let ((form `(,predicate ',obj)))
                 (multiple-value-bind (ok result)
-                    (sb-c::constant-function-call-p form nil nil)
+                    (sb-c::constant-function-call-p form nil)
                   (values (not (null result)) ok))))))))))
 
 ;;; :SB-XREF-FOR-INTERNALS hangs on to more symbols. It is not also the intent

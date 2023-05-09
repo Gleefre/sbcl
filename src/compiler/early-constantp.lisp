@@ -16,16 +16,16 @@
             (:constructor nil) (:copier nil) (:predicate nil)))
 
 (declaim (inline constantp))
-(defun constantp (form &optional (environment nil envp))
+(defun constantp (form &optional (environment nil))
   "True of any FORM that has a constant value: self-evaluating objects,
 keywords, defined constants, quote forms. Additionally the
 constant-foldability of some function calls and special forms is recognized.
-If ENVIRONMENT is provided, the FORM is first macroexpanded in it."
-  (%constantp form environment envp))
+The FORM is first macroexpanded in provided ENVIRONMENT."
+  (%constantp form environment))
 
 (declaim (inline constant-form-value))
-(defun constant-form-value (form &optional (environment nil envp))
+(defun constant-form-value (form &optional (environment nil))
   "Returns the value of the constant FORM in ENVIRONMENT. Behaviour
 is undefined unless CONSTANTP has been first used to determine the
 constantness of the FORM in ENVIRONMENT."
-  (%constant-form-value form environment envp))
+  (%constant-form-value form environment))
