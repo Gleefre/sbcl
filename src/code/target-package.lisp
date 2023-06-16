@@ -1338,7 +1338,7 @@ Experimental: interface subject to change."
 #+symbol-links
 (defun symbol-link (symbol)
   (check-type symbol symbol)
-  (let ((link (sb-vm::%symbol-link from)))
+  (let ((link (sb-vm::%symbol-link symbol)))
     (if (symbolp link)
         (values link t)
         (values nil nil))))
@@ -1346,7 +1346,7 @@ Experimental: interface subject to change."
 #+symbol-links
 (defun symbol-linked-by (symbol)
   (check-type symbol symbol)
-  (sb-vm::%symbol-linked-by from))
+  (sb-vm::%symbol-linked-by symbol))
 
 #+symbol-links
 (defun (setf sb-vm::%symbol-link) (value symbol)

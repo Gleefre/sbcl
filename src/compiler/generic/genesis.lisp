@@ -1179,7 +1179,11 @@ core and return a descriptor to it."
         #-compact-symbol
         (progn (write-wordindexed symbol sb-vm:symbol-package-id-slot
                                   (make-fixnum-descriptor pkg-id))
-               (write-wordindexed symbol sb-vm:symbol-name-slot cold-name))))
+               (write-wordindexed symbol sb-vm:symbol-name-slot cold-name))
+        #+symbol-links
+        (write-wordindexed symbol sb-vm::symbol-link-slot (make-fixnum-descriptor 0))
+        #+symbol-links
+        (write-wordindexed symbol sb-vm::symbol-linked-by-slot *nil-descriptor*)))
     symbol))
 
 ;;; Set the cold symbol value of SYMBOL-OR-SYMBOL-DES, which can be either a
