@@ -106,6 +106,8 @@
   ;; shadowing symbols
   ;; Todo: dynamically changeover to a SYMBOL-HASHSET if list gets long
   (%shadowing-symbols () :type list)
+  ;; symbol links
+  #+symbol-links (%symbol-links () :type list)
   ;; documentation string for this package
   (doc-string nil :type (or simple-string null))
   ;; package locking

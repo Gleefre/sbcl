@@ -423,7 +423,7 @@ distinct from the global value. Can also be SETF."
     ;; Compact-symbol (which is equivalent to #+64-bit) has the package already NIL
     ;; because the PACKAGE-ID-BITS field defaults to 0.
     #-compact-symbol (%set-symbol-package symbol nil)
-    #+symbol-links (%set-symbol-linked-by symbol nil)
+    #+symbol-links (sb-vm::%set-symbol-linked-by symbol nil)
     symbol))
 
 (defun get (symbol indicator &optional (default nil))

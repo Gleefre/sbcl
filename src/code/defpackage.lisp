@@ -210,6 +210,7 @@ implementation it is ~S." *!default-package-use-list*)
                     (setf (sb-c::package-environment-changed sb-c::*compilation*) t))
                   (setf (package-tables package) #()
                         (package-%shadowing-symbols package) nil
+                        (package-%symbol-links package) nil
                         (package-internal-symbols package) (make-symbol-hashset 0)
                         (package-external-symbols package) (make-symbol-hashset 0)))
                 (return-from delete-package t)))))))
@@ -319,7 +320,7 @@ implementation it is ~S." *!default-package-use-list*)
                 (imports (loop for (link-name actual-name) in (cdr optval)
                                collect (cons (stringify-string-designator link-name)
                                              (stringify-string-designator actual-name))))
-                (assoc (assoc package-name linked-imports :test #'string)))
+                (assoc (assoc package-name linked-imports :test #'string=)))
            (if assoc
                (setf (cdr assoc) (append (cdr assoc) imports))
                (setf linked-imports
@@ -465,7 +466,7 @@ implementation it is ~S." *!default-package-use-list*)
                   (eq (symbol-package to-sym) package))
         do (add-symbol-link from-sym to-sym))
   #+symbol-links
-  (loop for (from . to-sym) in linked-import
+  (loop for (from . to-sym) in linked-imports
         for from-sym = (intern from package)
         when (eq (symbol-package from-sym) package)
         do (add-symbol-link from-sym to-sym))
@@ -561,6 +562,124 @@ specifies to signal a warning if SWANK package is in variance, and an error othe
            :package name
            :format-control "~A is a nickname for the package ~A"
            :format-arguments (list name (package-name name))))
+  #+symbol-links
+  (let ((no-longer-linked (set-difference (package-%symbol-links package)
+                                          (append (mapcar #'car links)
+                                                  (mapcar #'car linked-imports))
+                                          :test #'string=)))
+    (when no-longer-linked
+      (restart-case
+          (let ((*package* (find-package :keyword)))
+            (note-package-variance
+             :format-control "~A also has the following symbol links:~%  ~S"
+             :format-arguments (list name (mapcar (lambda (name)
+                                                    (cons name
+                                                          (sb-vm::%symbol-link (intern name package))))
+                                                  no-longer-linked))
+             :package package))
+        (drop-them ()
+          :report "Remove links"
+          (dolist (name no-longer-linked)
+            (remove-symbol-link (intern name package))))
+        (keep-them ()
+          :report "Keep links"))))
+  #+symbol-links
+  (let ((dont-link))
+    (loop for (from . to) in links
+          for from-sym = (intern from package)
+          for to-sym = (intern to package)
+          for dont-link-it = nil
+          do (if (eq (symbol-package from-sym) package)
+                 (progn
+                   (when (not (eq (symbol-package to-sym) package))
+                     (restart-case
+                         (note-package-variance
+                          :format-control "Can't create link from ~A to ~A: conflicting symbol is present in ~A~%  ~S"
+                          :format-arguments (list from to name to-sym)
+                          :package package)
+                       (dont-create-link ()
+                         :report "Don't create the link."
+                         (setf dont-link-it t))
+                       (shadow-symbol ()
+                         :report "Shadow conflicting symbol."
+                         (shadow to-sym package)
+                         (setf to-sym (intern to package)))))
+                   (when (and (not dont-link-it)
+                              (symbolp (sb-vm::%symbol-link from-sym))
+                              (not (eq to-sym (sb-vm::%symbol-link from-sym))))
+                     (restart-case
+                         (note-package-variance
+                          :format-control "Conflicting link in package ~A: ~A links to ~A, not ~A"
+                          :format-arguments (list name from (sb-vm::%symbol-link from-sym) to)
+                          :package package)
+                       (drop-old-link ()
+                         :report "Remove old link."
+                         (remove-symbol-link from-sym))
+                       (keep-old-link ()
+                         :report "Keep old link."
+                         (setf dont-link-it t)))))
+                 (if (eq (symbol-package to-sym) package)
+                     (restart-case
+                         (note-package-variance
+                          :format-control "Can't create link ~A: conflicting symbol is present in ~A~%  ~S"
+                          :format-arguments (list from name from-sym)
+                          :package package)
+                       (dont-create-link ()
+                         :report "Don't create the link."
+                         (setf dont-link-it t))
+                       (shadow-symbol ()
+                         :report "Shadow conflicting symbol."
+                         (shadow from-sym package)))
+                     (restart-case
+                         (note-package-variance
+                          :format-control "Can't create link from ~A to ~A: conflicting symbols are present in ~A~%  ~S"
+                          :format-arguments (list from to name (list from-sym to-sym))
+                          :package package)
+                       (dont-create-link ()
+                         :report "Don't create the link."
+                         (setf dont-link-it T))
+                       (shadow-symbols ()
+                         :report "Shadow conflicting symbols."
+                         (shadow to-sym package)))))
+             (when dont-link-it
+               (pushnew from dont-link :test #'string=)))
+    (setf links (remove-if (lambda (spec) (member (car spec) dont-link :test #'string=))
+                           links)))
+  #+symbol-links
+  (let ((dont-link))
+    (loop for (from . to-sym) in linked-imports
+          for from-sym = (intern from package)
+          for dont-link-it = nil
+          do (if (eq (symbol-package from-sym) package)
+                 (when (and (symbolp (sb-vm::%symbol-link from-sym))
+                            (not (eq to-sym (sb-vm::%symbol-link from-sym))))
+                   (restart-case
+                       (note-package-variance
+                        :format-control "Conflicting link in package ~A: ~A links to ~A, not ~A"
+                        :format-arguments (list name from (sb-vm::%symbol-link from-sym) to-sym)
+                        :package package)
+                     (drop-old-link ()
+                       :report "Remove old link."
+                       (remove-symbol-link from-sym))
+                     (keep-old-link ()
+                       :report "Keep old link."
+                       (setf dont-link-it t))))
+                 (restart-case
+                     (note-package-variance
+                      :format-control "Can't create link ~A: conflicting symbol is present in ~A~%  ~S"
+                      :format-arguments (list from name from-sym)
+                      :package package)
+                   (dont-create-link ()
+                     :report "Don't create the link."
+                     (setf dont-link-it t))
+                   (shadow-symbol ()
+                     :report "Shadow conflicting symbol."
+                     (shadow from-sym package))))
+             (when dont-link-it
+               (pushnew from dont-link :test #'string=)))
+    (setf linked-imports
+          (remove-if (lambda (spec) (member (car spec) dont-link :test #'string=))
+                     linked-imports)))
   (let ((no-longer-shadowed
           (set-difference (package-%shadowing-symbols package)
                           (append shadows shadowing-imports)
@@ -624,6 +743,7 @@ specifies to signal a warning if SWANK package is in variance, and an error othe
                   shadows shadowing-imports
                   use imports interns exports
                   implement local-nicknames
+                  #+symbol-links linked-imports #+symbol-links links
                   lock doc-string))
 
 (defun %defpackage (name nicknames size shadows shadowing-imports
@@ -638,6 +758,7 @@ specifies to signal a warning if SWANK package is in variance, and an error othe
   (with-package-graph ()
     (let* ((existing-package (find-package name))
            (use (use-list-packages existing-package use))
+           #+symbol-links (sb-ext:*follow-symbol-links* nil)
            (shadowing-imports (import-list-symbols shadowing-imports))
            #+symbol-links (linked-imports (import-alist-symbols linked-imports))
            (imports (import-list-symbols imports)))
