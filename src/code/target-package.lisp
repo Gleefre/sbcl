@@ -1336,50 +1336,65 @@ Experimental: interface subject to change."
     result))
 
 #+symbol-links
+(declaim (inline %symbol-link))
+#+symbol-links
+(defun %symbol-link (symbol)
+  (gethash symbol *symbol->symbol-link*))
+
+#+symbol-links
+(defun (setf %symbol-link) (value symbol)
+  (if (symbolp value)
+      (setf (gethash symbol *symbol->symbol-link*) value)
+      (remhash symbol *symbol->symbol-link*)))
+
+#+symbol-links
 (defun symbol-link (symbol)
   (check-type symbol symbol)
-  (let ((link (sb-vm::%symbol-link symbol)))
-    (if (symbolp link)
-        (values link t)
-        (values nil nil))))
+  (%symbol-link symbol))
+
+#+symbol-links
+(declaim (inline %symbol-linked-by))
+#+symbol-links
+(defun %symbol-linked-by (symbol)
+  (gethash symbol *symbol->symbol-linked-by*))
+
+#+symbol-links
+(defun (setf %symbol-linked-by) (value symbol)
+  (setf (gethahs symbol *symbol->symbol-linked-by*) value))
 
 #+symbol-links
 (defun symbol-linked-by (symbol)
   (check-type symbol symbol)
-  (sb-vm::%symbol-linked-by symbol))
+  (nth-value 0 (%symbol-linked-by symbol)))
 
 #+symbol-links
-(defun (setf sb-vm::%symbol-link) (value symbol)
-  (sb-vm::%set-symbol-link symbol value))
-
-#+symbol-links
-(defun (setf sb-vm::%symbol-linked-by) (value symbol)
-  (sb-vm::%set-symbol-linked-by symbol value))
+(declaim (inline %add-symbol-link %remove-symbol-link))
 
 #+symbol-links
 (defun %add-symbol-link (from to)
-  (when (eq (sb-vm::%symbol-link from) to)
-    (return-from %add-symbol-link nil))
-  (when (loop for sym = to then (sb-vm::%symbol-link sym)
-              thereis (eq from sym)
-              while (symbolp (sb-vm::%symbol-link sym)))
-    (restart-case
-        (error 'cyclic-symbol-link :symbol from :link to)
-      (continue ()
-        :report "Continue (link is not created)"
-        (return-from %add-symbol-link nil))))
-  (when (symbolp (sb-vm::%symbol-link from))
-    (restart-case
-        (error 'conflicting-symbol-link :symbol from :link to)
-      (continue ()
-        :report "Continue (link is not created)"
-        (return-from %add-symbol-link nil))
-      (drop ()
-        :report "Remove existing link"
-        (%remove-symbol-link from))))
-  (setf (sb-vm::%symbol-link from) to)
-  (push from (sb-vm::%symbol-linked-by to))
-  t)
+  (multiple-value-bind (link link-p) (%symbol-link from)
+    (when link-p
+      (if (eq link to)
+          (return-from %add-symbol-link nil)
+          (restart-case
+              (error 'conflicting-symbol-link :symbol from :link to)
+            (continue ()
+              :report "Continue (link is not created)"
+              (return-from %add-symbol-link nil))
+            (drop ()
+              :report "Remove existing link"
+              (%remove-symbol-link from))))))
+  (if (loop for sym = to then (%symbol-link sym)
+            thereis (eq from sym)
+            while (nth-value 1 (%symbol-link sym)))
+      (restart-case
+          (error 'cyclic-symbol-link :symbol from :link to)
+        (continue ()
+          :report "Continue (link is not created)"))
+      (progn
+        (setf (%symbol-link from) to)
+        (push from (%symbol-linked-by to))
+        t)))
 
 #+symbol-links
 (defun add-symbol-link (from to)
@@ -1389,17 +1404,17 @@ Experimental: interface subject to change."
 
 #+symbol-links
 (defun %remove-symbol-link (from)
-  (when (symbolp (sb-vm::%symbol-link from))
-    (when (symbol-package from)
-      (setf (package-%symbol-links (symbol-package from))
-            (remove (symbol-name from)
-                    (package-%symbol-links (symbol-package from))
-                    :test #'string=)))
-    (let ((to (sb-vm::%symbol-link from)))
-      (setf (sb-vm::%symbol-linked-by to)
-            (remove from (sb-vm::%symbol-linked-by to))))
-    (setf (sb-vm::%symbol-link from) 0)
-    t))
+  (multiple-value-bind (link link-p) (%symbol-link from)
+    (when link-p
+      (when (symbol-package from)
+        (setf (package-%symbol-links (symbol-package from))
+              (remove (symbol-name from)
+                      (package-%symbol-links (symbol-package from))
+                      :test #'string=)))
+      (setf (%symbol-linked-by link)
+            (remove from (sb-vm::%symbol-linked-by link)))
+      (setf (%symbol-link from) 0)
+      t)))
 
 #+symbol-links
 (defun remove-symbol-link (from)
@@ -1408,9 +1423,13 @@ Experimental: interface subject to change."
 
 #+symbol-links
 (defmacro %follow-symbol-links (symbol-var)
-  `(when *follow-symbol-links*
-     (loop while (symbolp (sb-vm::%symbol-link ,symbol-var))
-           do (setf ,symbol-var (sb-vm::%symbol-link ,symbol-var)))))
+  (let ((link (gensym))
+        (link-p (gensym)))
+    `(when *follow-symbol-links*
+       (loop
+         (multiple-value-bind (,link ,link-p) (%symbol-link ,symbol-var)
+           (unless ,link-p (return))
+           (setf ,symbol-var ,link))))))
 
 ;;; Check internal and external symbols, then scan down the list
 ;;; of hashtables for inherited symbols.
@@ -2060,6 +2079,8 @@ PACKAGE."
 (defun !package-cold-init (&aux (specs (cdr *!initial-symbols*)))
   ;; (setq *sym-lookups* 0 *sym-hit-1st-try* 0)
   #+symbol-links (setq sb-ext:*follow-symbol-links* nil)
+  #+symbol-links (setq *symbol->symbol-link* (make-hash-table))
+  #+symbol-links (setq *symbol->symbol-linked-by* (make-hash-table))
   (setf *package-graph-lock* (sb-thread:make-mutex :name "Package Graph Lock"))
   (setf *package-table-lock* (sb-thread:make-mutex :name "Package Table Lock"))
   (setf *all-packages* #(0))

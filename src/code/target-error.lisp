@@ -1561,7 +1561,7 @@ SB-EXT:PACKAGE-LOCKED-ERROR-SYMBOL."))
              "Attempt to create a cyclic symbol link (~S~{ -> ~S~})"
              (symbol-link-symbol condition)
              (loop for link = (symbol-link-link condition)
-                   then (sb-vm::%symbol-link link)
+                   then (symbol-link link)
                    collect link
                    until (eq link (symbol-link-symbol condition)))))))
 
@@ -1573,7 +1573,7 @@ SB-EXT:PACKAGE-LOCKED-ERROR-SYMBOL."))
      (format stream
              "Conflicting link already exists (~S -> ~S, not ~S)"
              (symbol-link-symbol condition)
-             (sb-vm::%symbol-link (symbol-link-symbol condition))
+             (symbol-link (symbol-link-symbol condition))
              (symbol-link-link condition)))))
 
 (define-condition simple-package-error (simple-condition package-error) ())
