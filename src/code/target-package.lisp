@@ -1698,6 +1698,7 @@ uninterned."
             (when (cdr cset)
               (apply #'name-conflict package 'unintern symbol cset)
               (return-from unintern t)))
+          #+symbol-links
           (setf (package-%symbol-links package)
                 (remove (symbol-name symbol) (package-%symbol-links package)))
           (setf (package-%shadowing-symbols package)
