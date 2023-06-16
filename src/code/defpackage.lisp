@@ -461,15 +461,39 @@ implementation it is ~S." *!default-package-use-list*)
   #+symbol-links
   (loop for (from . to) in links
         for from-sym = (intern from package)
-        for to-sym = (intern from package)
-        when (and (eq (symbol-package from-sym) package)
-                  (eq (symbol-package to-sym) package))
-        do (add-symbol-link from-sym to-sym))
+        for to-sym = (intern to package)
+        for conflict = (append (unless (eq (symbol-package from-sym) package) (list from-sym))
+                               (unless (eq (symbol-package to-sym) package) (list to-sym)))
+        do (if conflict
+               (restart-case
+                   (note-package-variance
+                    :format-control "Can't create link ~A -> ~A: conflicting symbols are present in ~A~%  ~S"
+                    :format-arguments (list from to (package-name package) conflict)
+                    :package package)
+                 (dont-create-link ()
+                   :report "Don't create the link.")
+                 (shadow-symbol ()
+                   :report "Shadow conflicting symbol."
+                   (dolist (sym conflict)
+                     (shadow sym package))
+                   (add-symbol-link (intern from package) (intern to package))))
+               (add-symbol-link from-sym to-sym)))
   #+symbol-links
   (loop for (from . to-sym) in linked-imports
         for from-sym = (intern from package)
-        when (eq (symbol-package from-sym) package)
-        do (add-symbol-link from-sym to-sym))
+        do (if (eq (symbol-package from-sym) package)
+               (add-symbol-link from-sym to-sym)
+               (restart-case
+                   (note-package-variance
+                    :format-control "Can't create link ~A -> ~A: conflicting symbol is present in ~A~%  ~S"
+                    :format-arguments (list from to-sym (package-name package) from-sym)
+                    :package package)
+                 (dont-create-link ()
+                   :report "Don't create the link.")
+                 (shadow-symbol ()
+                   :report "Shadow conflicting symbol."
+                   (shadow from-sym package)
+                   (add-symbol-link (intern from package) to-sym)))))
   ;; 1. :shadow and :shadowing-import-from
   ;;
   ;; shadows is a list of strings, shadowing-imports is a list of symbols.
@@ -573,8 +597,7 @@ specifies to signal a warning if SWANK package is in variance, and an error othe
             (note-package-variance
              :format-control "~A also has the following symbol links:~%  ~S"
              :format-arguments (list name (mapcar (lambda (name)
-                                                    (cons name
-                                                          (sb-vm::%symbol-link (intern name package))))
+                                                    (cons name (sb-vm::%symbol-link (intern name package))))
                                                   no-longer-linked))
              :package package))
         (drop-them ()
@@ -583,103 +606,6 @@ specifies to signal a warning if SWANK package is in variance, and an error othe
             (remove-symbol-link (intern name package))))
         (keep-them ()
           :report "Keep links"))))
-  #+symbol-links
-  (let ((dont-link))
-    (loop for (from . to) in links
-          for from-sym = (intern from package)
-          for to-sym = (intern to package)
-          for dont-link-it = nil
-          do (if (eq (symbol-package from-sym) package)
-                 (progn
-                   (when (not (eq (symbol-package to-sym) package))
-                     (restart-case
-                         (note-package-variance
-                          :format-control "Can't create link from ~A to ~A: conflicting symbol is present in ~A~%  ~S"
-                          :format-arguments (list from to name to-sym)
-                          :package package)
-                       (dont-create-link ()
-                         :report "Don't create the link."
-                         (setf dont-link-it t))
-                       (shadow-symbol ()
-                         :report "Shadow conflicting symbol."
-                         (shadow to-sym package)
-                         (setf to-sym (intern to package)))))
-                   (when (and (not dont-link-it)
-                              (symbolp (sb-vm::%symbol-link from-sym))
-                              (not (eq to-sym (sb-vm::%symbol-link from-sym))))
-                     (restart-case
-                         (note-package-variance
-                          :format-control "Conflicting link in package ~A: ~A links to ~A, not ~A"
-                          :format-arguments (list name from (sb-vm::%symbol-link from-sym) to)
-                          :package package)
-                       (drop-old-link ()
-                         :report "Remove old link."
-                         (remove-symbol-link from-sym))
-                       (keep-old-link ()
-                         :report "Keep old link."
-                         (setf dont-link-it t)))))
-                 (if (eq (symbol-package to-sym) package)
-                     (restart-case
-                         (note-package-variance
-                          :format-control "Can't create link ~A: conflicting symbol is present in ~A~%  ~S"
-                          :format-arguments (list from name from-sym)
-                          :package package)
-                       (dont-create-link ()
-                         :report "Don't create the link."
-                         (setf dont-link-it t))
-                       (shadow-symbol ()
-                         :report "Shadow conflicting symbol."
-                         (shadow from-sym package)))
-                     (restart-case
-                         (note-package-variance
-                          :format-control "Can't create link from ~A to ~A: conflicting symbols are present in ~A~%  ~S"
-                          :format-arguments (list from to name (list from-sym to-sym))
-                          :package package)
-                       (dont-create-link ()
-                         :report "Don't create the link."
-                         (setf dont-link-it T))
-                       (shadow-symbols ()
-                         :report "Shadow conflicting symbols."
-                         (shadow to-sym package)))))
-             (when dont-link-it
-               (pushnew from dont-link :test #'string=)))
-    (setf links (remove-if (lambda (spec) (member (car spec) dont-link :test #'string=))
-                           links)))
-  #+symbol-links
-  (let ((dont-link))
-    (loop for (from . to-sym) in linked-imports
-          for from-sym = (intern from package)
-          for dont-link-it = nil
-          do (if (eq (symbol-package from-sym) package)
-                 (when (and (symbolp (sb-vm::%symbol-link from-sym))
-                            (not (eq to-sym (sb-vm::%symbol-link from-sym))))
-                   (restart-case
-                       (note-package-variance
-                        :format-control "Conflicting link in package ~A: ~A links to ~A, not ~A"
-                        :format-arguments (list name from (sb-vm::%symbol-link from-sym) to-sym)
-                        :package package)
-                     (drop-old-link ()
-                       :report "Remove old link."
-                       (remove-symbol-link from-sym))
-                     (keep-old-link ()
-                       :report "Keep old link."
-                       (setf dont-link-it t))))
-                 (restart-case
-                     (note-package-variance
-                      :format-control "Can't create link ~A: conflicting symbol is present in ~A~%  ~S"
-                      :format-arguments (list from name from-sym)
-                      :package package)
-                   (dont-create-link ()
-                     :report "Don't create the link."
-                     (setf dont-link-it t))
-                   (shadow-symbol ()
-                     :report "Shadow conflicting symbol."
-                     (shadow from-sym package))))
-             (when dont-link-it
-               (pushnew from dont-link :test #'string=)))
-    (setf linked-imports
-          (remove-if (lambda (spec) (member (car spec) dont-link :test #'string=))
-                     linked-imports)))
   (let ((no-longer-shadowed
           (set-difference (package-%shadowing-symbols package)
                           (append shadows shadowing-imports)
