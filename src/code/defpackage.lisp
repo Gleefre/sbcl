@@ -244,6 +244,8 @@ implementation it is ~S." *!default-package-use-list*)
        (:import-from "<package-name> {symbol-name}*")
        (:shadow "{symbol-name}*")
        (:shadowing-import-from "<package-name> {symbol-name}*")
+       #+symbol-links (:linked-import-from "<package-name> (link-name actual-name)*")
+       #+symbol-links (:links "(link-name actual-name)*")
        (:local-nicknames "{(local-nickname actual-package-name)}*")
        (:lock "boolean")
        (:implement "{package-name}*")
@@ -257,6 +259,8 @@ implementation it is ~S." *!default-package-use-list*)
         (size nil)
         (shadows nil)
         (shadowing-imports nil)
+        #+symbol-links (linked-imports nil)
+        #+symbol-links (links nil)
         (use nil)
         (use-p nil)
         (imports nil)
@@ -309,6 +313,22 @@ implementation it is ~S." *!default-package-use-list*)
                  (setf (cdr assoc) (append (cdr assoc) names))
                  (setf shadowing-imports
                        (acons package-name names shadowing-imports))))))
+        #+symbol-links
+        (:linked-import-from
+         (let* ((package-name (stringify-package-designator (car optval)))
+                (imports (loop for (link-name actual-name) in (cdr optval)
+                               collect (cons (stringify-string-designator link-name)
+                                             (stringify-string-designator actual-name))))
+                (assoc (assoc package-name linked-imports :test #'string)))
+           (if assoc
+               (setf (cdr assoc) (append (cdr assoc) imports))
+               (setf linked-imports
+                     (acons package-name imports linked-imports)))))
+        #+symbol-links
+        (:links
+         (setf links (append links (loop for (link-name actual-name) in optval
+                                         collect (cons (stringify-string-designator link-name)
+                                                       (stringify-string-designator actual-name))))))
         (:use
          (setf use (append use (stringify-package-designators optval))
                use-p t))
@@ -350,6 +370,7 @@ implementation it is ~S." *!default-package-use-list*)
                     ;; * (package-implements-list (make-package "B")) => NIL
                     ',(if implement-p implement (list package))
                     ',local-nicknames
+                    #+symbol-links ',linked-imports #+symbol-links ',links
                     ',lock (sb-c:source-location)
                     ,@(and doc
                            `(,doc))))))
@@ -402,6 +423,18 @@ implementation it is ~S." *!default-package-use-list*)
                     (push (find-or-make-symbol name package) symbols))
                   symbol-names))))))
 
+#+symbol-links
+(defun import-alist-symbols (import-alist)
+  (let ((symbols-alist nil))
+    (dolist (import import-alist symbols-alist)
+      (destructuring-bind (package-name &rest spec-alist)
+          import-alist
+        (let ((package (find-undeleted-package-or-lose package-name)))
+          (mapcar (lambda (spec)
+                    (destructuring-bind (link . name) spec
+                      (push (cons link (find-or-make-symbol name package)) symbols-alist)))
+                  spec-alist))))))
+
 (defun use-list-packages (package package-designators)
   (cond ((listp package-designators)
          (mapcar #'find-undeleted-package-or-lose package-designators))
@@ -418,8 +451,24 @@ implementation it is ~S." *!default-package-use-list*)
                        use
                        imports interns
                        exports implement local-nicknames
+                       #+symbol-links linked-imports #+symbol-links links
                        lock doc-string)
   (rename-package package (package-name package) nicknames)
+  ;; 0. :linked-import-from and :links
+  ;;
+  ;; links is an alist of strings, linked-imports is an alist of (string . symbol)
+  #+symbol-links
+  (loop for (from . to) in links
+        for from-sym = (intern from package)
+        for to-sym = (intern from package)
+        when (and (eq (symbol-package from-sym) package)
+                  (eq (symbol-package to-sym) package))
+        do (add-symbol-link from-sym to-sym))
+  #+symbol-links
+  (loop for (from . to-sym) in linked-import
+        for from-sym = (intern from package)
+        when (eq (symbol-package from-sym) package)
+        do (add-symbol-link from-sym to-sym))
   ;; 1. :shadow and :shadowing-import-from
   ;;
   ;; shadows is a list of strings, shadowing-imports is a list of symbols.
@@ -505,6 +554,7 @@ specifies to signal a warning if SWANK package is in variance, and an error othe
                                      imports interns
                                      exports
                                      implement local-nicknames
+                                     #+symbol-links linked-imports #+symbol-links links
                                      lock doc-string)
   (unless (string= (the string (package-name package)) name)
     (error 'simple-package-error
@@ -578,6 +628,7 @@ specifies to signal a warning if SWANK package is in variance, and an error othe
 
 (defun %defpackage (name nicknames size shadows shadowing-imports
                     use imports interns exports implement local-nicknames
+                    #+symbol-links linked-imports #+symbol-links links
                     lock source-location &optional doc)
   (declare (type simple-string name)
            (type list nicknames shadows shadowing-imports
@@ -588,6 +639,7 @@ specifies to signal a warning if SWANK package is in variance, and an error othe
     (let* ((existing-package (find-package name))
            (use (use-list-packages existing-package use))
            (shadowing-imports (import-list-symbols shadowing-imports))
+           #+symbol-links (linked-imports (import-alist-symbols linked-imports))
            (imports (import-list-symbols imports)))
       (if existing-package
           (update-package-with-variance existing-package name
@@ -595,6 +647,7 @@ specifies to signal a warning if SWANK package is in variance, and an error othe
                                         shadows shadowing-imports
                                         use imports interns exports
                                         implement local-nicknames
+                                        #+symbol-links linked-imports #+symbol-links links
                                         lock doc)
           (let ((package (make-package name
                                        :use nil
@@ -606,6 +659,7 @@ specifies to signal a warning if SWANK package is in variance, and an error othe
                             shadows shadowing-imports
                             use imports interns exports
                             implement local-nicknames
+                            #+symbol-links linked-imports #+symbol-links links
                             lock doc))))))
 
 (defun find-or-make-symbol (name package)
