@@ -210,7 +210,7 @@ implementation it is ~S." *!default-package-use-list*)
                     (setf (sb-c::package-environment-changed sb-c::*compilation*) t))
                   (setf (package-tables package) #()
                         (package-%shadowing-symbols package) nil
-                        (package-%symbol-links package) nil
+                        #+symbol-links (package-%symbol-links package) #+symbol-links nil
                         (package-internal-symbols package) (make-symbol-hashset 0)
                         (package-external-symbols package) (make-symbol-hashset 0)))
                 (return-from delete-package t)))))))

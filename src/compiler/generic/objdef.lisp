@@ -437,13 +437,11 @@ during backtrace.
              :ref-trans %symbol-tls-index)
   #+symbol-links
   (link :ref-trans %symbol-link :ref-known ()
-        :set-trans %set-symbol-link :set-known ()
-        :init :null)
+        :set-trans %set-symbol-link :set-known ())
   #+symbol-links
   (linked-by :ref-trans %symbol-linked-by :ref-known ()
              :set-trans %set-symbol-linked-by :set-known ()
-             :type list
-             :init :null))
+             :type list))
 
 (define-primitive-object (complex-single-float
                           :lowtag other-pointer-lowtag

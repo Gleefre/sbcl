@@ -1353,7 +1353,7 @@ Experimental: interface subject to change."
         (continue ()
           :report "Continue (link is not created)"
           (return-from %add-symbol-link nil))
-        (drop
+        (drop ()
           :report "Remove existing link"
           (sb-vm::%set-symbol-linked-by
            (sb-vm::%symbol-link from)
@@ -1368,7 +1368,7 @@ Experimental: interface subject to change."
 (defun add-symbol-link (from to)
   (check-type from symbol)
   (check-type to symbol)
-  (%add-package-local-nickname from to))
+  (%add-symbol-link from to))
 
 #+symbol-links
 (defun %remove-symbol-link (from)
