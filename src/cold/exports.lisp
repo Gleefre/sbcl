@@ -913,6 +913,8 @@ like *STACK-TOP-HINT* and unsupported stuff like *TRACED-FUN-LIST*.")
    #+symbol-links "*FOLLOW-SYMBOL-LINKS*"
    #+symbol-links "ADD-SYMBOL-LINK"
    #+symbol-links "REMOVE-SYMBOL-LINK"
+   #+symbol-links "SYMBOL-LINK"
+   #+symbol-links "SYMBOL-LINKED-BY"
 
    ;; Custom conditions & condition accessors for users to handle.
 

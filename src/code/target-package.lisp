@@ -1336,6 +1336,27 @@ Experimental: interface subject to change."
     result))
 
 #+symbol-links
+(defun symbol-link (symbol)
+  (check-type symbol symbol)
+  (let ((link (sb-vm::%symbol-link from)))
+    (if (symbolp link)
+        (values link t)
+        (values nil nil))))
+
+#+symbol-links
+(defun symbol-linked-by (symbol)
+  (check-type symbol symbol)
+  (sb-vm::%symbol-linked-by from))
+
+#+symbol-links
+(defun (setf sb-vm::%symbol-link) (value symbol)
+  (sb-vm::%set-symbol-link symbol value))
+
+#+symbol-links
+(defun (setf sb-vm::%symbol-linked-by) (value symbol)
+  (sb-vm::%set-symbol-linked-by symbol value))
+
+#+symbol-links
 (defun %add-symbol-link (from to)
   (when (eq (sb-vm::%symbol-link from) to)
     (return-from %add-symbol-link nil))
@@ -1347,21 +1368,17 @@ Experimental: interface subject to change."
       (continue ()
         :report "Continue (link is not created)"
         (return-from %add-symbol-link nil))))
-  (if (symbolp (sb-vm::%symbol-link from))
-      (restart-case
-          (error 'conflicting-symbol-link :symbol from :link to)
-        (continue ()
-          :report "Continue (link is not created)"
-          (return-from %add-symbol-link nil))
-        (drop ()
-          :report "Remove existing link"
-          (sb-vm::%set-symbol-linked-by
-           (sb-vm::%symbol-link from)
-           (remove from (sb-vm::%symbol-linked-by (sb-vm::%symbol-link from))))))
-      (when (symbol-package from)
-        (push (symbol-name from) (package-%symbol-links (symbol-package from)))))
-  (sb-vm::%set-symbol-link from to)
-  (sb-vm::%set-symbol-linked-by to (list* from (sb-vm::%symbol-linked-by to)))
+  (when (symbolp (sb-vm::%symbol-link from))
+    (restart-case
+        (error 'conflicting-symbol-link :symbol from :link to)
+      (continue ()
+        :report "Continue (link is not created)"
+        (return-from %add-symbol-link nil))
+      (drop ()
+        :report "Remove existing link"
+        (%remove-symbol-link from))))
+  (setf (sb-vm::%symbol-link from) to)
+  (push from (sb-vm::%symbol-linked-by to))
   t)
 
 #+symbol-links
@@ -1379,8 +1396,9 @@ Experimental: interface subject to change."
                     (package-%symbol-links (symbol-package from))
                     :test #'string=)))
     (let ((to (sb-vm::%symbol-link from)))
-      (sb-vm::%set-symbol-linked-by to (remove from (sb-vm::%symbol-linked-by to))))
-    (sb-vm::%set-symbol-link from 0)
+      (setf (sb-vm::%symbol-linked-by to)
+            (remove from (sb-vm::%symbol-linked-by to))))
+    (setf (sb-vm::%symbol-link from) 0)
     t))
 
 #+symbol-links
