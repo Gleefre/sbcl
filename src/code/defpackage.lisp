@@ -424,18 +424,6 @@ implementation it is ~S." *!default-package-use-list*)
                     (push (find-or-make-symbol name package) symbols))
                   symbol-names))))))
 
-#+symbol-links
-(defun import-alist-symbols (import-alist)
-  (let ((symbols-alist nil))
-    (dolist (import import-alist symbols-alist)
-      (destructuring-bind (package-name &rest spec-alist)
-          import-alist
-        (let ((package (find-undeleted-package-or-lose package-name)))
-          (mapcar (lambda (spec)
-                    (destructuring-bind (link . name) spec
-                      (push (cons link (find-or-make-symbol name package)) symbols-alist)))
-                  spec-alist))))))
-
 (defun use-list-packages (package package-designators)
   (cond ((listp package-designators)
          (mapcar #'find-undeleted-package-or-lose package-designators))
@@ -686,7 +674,11 @@ specifies to signal a warning if SWANK package is in variance, and an error othe
            (use (use-list-packages existing-package use))
            #+symbol-links (sb-ext:*follow-symbol-links* nil)
            (shadowing-imports (import-list-symbols shadowing-imports))
-           #+symbol-links (linked-imports (import-alist-symbols linked-imports))
+           #+symbol-links (linked-imports
+                            (loop for (package-name . specs) in linked-imports
+                                  for package = (find-undeleted-package-or-lose package-name)
+                                  append (loop for (link-name . actual-name) in specs
+                                               collect (cons link-name (find-or-make-symbol actual-name package)))))
            (imports (import-list-symbols imports)))
       (if existing-package
           (update-package-with-variance existing-package name
