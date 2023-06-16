@@ -91,6 +91,7 @@
            ;; unsure, I think this is for end-user consumption,
            ;; though every release of SBCL since eons ago has had local nicknames.
            :PACKAGE-LOCAL-NICKNAMES
+           :SYMBOL-LINKS
            ;; Developer mode features. A release build will never have them,
            ;; hence it makes no difference whether they're public or not.
            :SB-DEVEL :SB-DEVEL-LOCK-PACKAGES)")))

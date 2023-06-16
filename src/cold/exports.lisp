@@ -909,6 +909,11 @@ like *STACK-TOP-HINT* and unsupported stuff like *TRACED-FUN-LIST*.")
 
    "*ON-PACKAGE-VARIANCE*"
 
+   ;; symbol links
+   #+symbol-links "*FOLLOW-SYMBOL-LINKS*"
+   #+symbol-links "ADD-SYMBOL-LINK"
+   #+symbol-links "REMOVE-SYMBOL-LINK"
+
    ;; Custom conditions & condition accessors for users to handle.
 
    "CODE-DELETION-NOTE"

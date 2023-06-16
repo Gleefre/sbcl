@@ -434,7 +434,16 @@ during backtrace.
   #+(and sb-thread (not 64-bit))
   (tls-index :type (and fixnum unsigned-byte) ; too generous still?
              :ref-known (flushable)
-             :ref-trans %symbol-tls-index))
+             :ref-trans %symbol-tls-index)
+  #+symbol-links
+  (link :ref-trans %symbol-link :ref-known ()
+        :set-trans %set-symbol-link :set-known ()
+        :init :null)
+  #+symbol-links
+  (linked-by :ref-trans %symbol-linked-by :ref-known ()
+             :set-trans %set-symbol-linked-by :set-known ()
+             :type list
+             :init :null))
 
 (define-primitive-object (complex-single-float
                           :lowtag other-pointer-lowtag

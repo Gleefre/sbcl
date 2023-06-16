@@ -1335,6 +1335,35 @@ Experimental: interface subject to change."
     (do-packages (package) (push package result))
     result))
 
+#+symbol-links
+(defun add-symbol-link (from to)
+  (check-type from symbol)
+  (check-type to symbol)
+  (when (or (symbolp (sb-vm::%symbol-link from))
+            (loop for sym = to then (sb-vm::%symbol-link sym)
+                  thereis (eq from sym)
+                  while (symbolp (sb-vm::%symbol-link sym))))
+    (error "Can't add symbol link"))
+  (sb-vm::%set-symbol-link from to)
+  (sb-vm::%set-symbol-linked-by to (list* from (sb-vm::%symbol-linked-by to))))
+
+#+symbol-links
+(defun remove-symbol-link (from to)
+  (check-type from symbol)
+  (check-type to symbol)
+  (unless (symbolp (sb-vm::%symbol-link from))
+    (error "There is no symbol link to remove"))
+  (sb-vm::%set-symbol-link from 0)
+  (sb-vm::%set-symbol-linked-by to (remove from (sb-vm::%symbol-linked-by to))))
+
+(declaim (inline %follow-symbol-links))
+(defun %follow-symbol-links (symbol)
+  #+symbol-links
+  (when *follow-symbol-links*
+    (loop while (symbolp (sb-vm::%symbol-link symbol))
+          do (setf symbol (sb-vm::%symbol-link symbol))))
+  symbol)
+
 ;;; Check internal and external symbols, then scan down the list
 ;;; of hashtables for inherited symbols.
 (defun %find-symbol (string length package)
@@ -1343,9 +1372,9 @@ Experimental: interface subject to change."
   (let ((hash (compute-symbol-hash string length)))
     (declare (hash-code hash))
     (with-symbol ((symbol) (package-internal-symbols package) string length hash)
-      (return-from %find-symbol (values symbol :internal)))
+      (return-from %find-symbol (values (%follow-symbol-links symbol) :internal)))
     (with-symbol ((symbol) (package-external-symbols package) string length hash)
-      (return-from %find-symbol (values symbol :external)))
+      (return-from %find-symbol (values (%follow-symbol-links symbol) :external)))
     (let* ((tables (package-tables package))
            (n (length tables)))
       (unless (eql n 0)
@@ -1359,7 +1388,7 @@ Experimental: interface subject to change."
                                     (svref tables i))
                          string length hash)
              (setf (package-mru-table-index package) i)
-             (return-from %find-symbol (values symbol :inherited)))
+             (return-from %find-symbol (values (%follow-symbol-links symbol) :inherited)))
            (if (< (decf i) 0) (setq i (1- n)))
            (if (= i start) (return)))))))
   (values nil nil))
@@ -1976,6 +2005,7 @@ PACKAGE."
 (defun pkg-name= (a b) (and (not (eql a 0)) (string= a b)))
 (defun !package-cold-init (&aux (specs (cdr *!initial-symbols*)))
   ;; (setq *sym-lookups* 0 *sym-hit-1st-try* 0)
+  #+symbol-links (setq sb-ext:*follow-symbol-links* nil)
   (setf *package-graph-lock* (sb-thread:make-mutex :name "Package Graph Lock"))
   (setf *package-table-lock* (sb-thread:make-mutex :name "Package Table Lock"))
   (setf *all-packages* #(0))

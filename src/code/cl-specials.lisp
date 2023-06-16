@@ -68,6 +68,7 @@
                 cl:///
                 ;; extension/internal specials are also proclaimed early
                 ;; to benefit from always-bound and precomputed TLS index.
+                #+symbol-links sb-ext:*follow-symbol-links*
                 sb-kernel:*current-level-in-print*
                 sb-ext:*print-vector-length*)))
     `(progn
@@ -109,6 +110,9 @@
                          cl:*print-gensym* cl:*print-pretty*
                          cl:*print-readably* cl:*read-eval*
                          cl:*read-suppress*))
+
+#+symbol-links
+(declaim (type t sb-ext:*follow-symbol-links*))
 
 (declaim (type sb-pretty:pprint-dispatch-table cl:*print-pprint-dispatch*))
 
