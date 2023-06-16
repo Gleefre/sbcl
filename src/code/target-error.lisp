@@ -1547,6 +1547,35 @@ SB-EXT:PACKAGE-LOCKED-ERROR-SYMBOL."))
          :pathname pathname
          :format-control format-control :format-arguments format-arguments))
 
+#+symbol-links
+(define-condition symbol-link-error (error)
+  ((symbol :reader symbol-link-symbol :initarg :symbol)
+   (link :reader symbol-link-link :initarg :link)))
+
+#+symbol-links
+(define-condition cyclic-symbol-link (symbol-link-error)
+  ()
+  (:report
+   (lambda (condition stream)
+     (format stream
+             "Attempt to create a cyclic symbol link (~S~{ -> ~S~})"
+             (symbol-link-symbol condition)
+             (loop for link = (symbol-link-link condition)
+                   then (sb-vm::%symbol-link link)
+                   collect link
+                   until (eq link (symbol-link-symbol condition)))))))
+
+#+symbol-links
+(define-condition conflicting-symbol-link (symbol-link-error)
+  ()
+  (:report
+   (lambda (condition stream)
+     (format stream
+             "Conflicting link already exists (~S -> ~S, not ~S)"
+             (symbol-link-symbol condition)
+             (sb-vm::%symbol-link (symbol-link-symbol condition))
+             (symbol-link-link condition)))))
+
 (define-condition simple-package-error (simple-condition package-error) ())
 
 (define-condition package-does-not-exist (simple-package-error) ())

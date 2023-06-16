@@ -1336,39 +1336,63 @@ Experimental: interface subject to change."
     result))
 
 #+symbol-links
+(defun %add-symbol-link (from to)
+  (when (eq (sb-vm::%symbol-link from) to)
+    (return-from %add-symbol-link nil))
+  (when (loop for sym = to then (sb-vm::%symbol-link sym)
+              thereis (eq from sym)
+              while (symbolp (sb-vm::%symbol-link sym)))
+    (restart-case
+        (error 'cyclic-symbol-link :symbol from :link to)
+      (continue ()
+        :report "Continue (link is not created)"
+        (return-from %add-symbol-link nil))))
+  (if (symbolp (sb-vm::%symbol-link from))
+      (restart-case
+          (error 'conflicting-symbol-link :symbol from :link to)
+        (continue ()
+          :report "Continue (link is not created)"
+          (return-from %add-symbol-link nil))
+        (drop
+          :report "Remove existing link"
+          (sb-vm::%set-symbol-linked-by
+           (sb-vm::%symbol-link from)
+           (remove from (sb-vm::%symbol-linked-by (sb-vm::%symbol-link from))))))
+      (when (symbol-package from)
+        (push (symbol-name from) (package-%symbol-links (symbol-package from)))))
+  (sb-vm::%set-symbol-link from to)
+  (sb-vm::%set-symbol-linked-by to (list* from (sb-vm::%symbol-linked-by to)))
+  t)
+
+#+symbol-links
 (defun add-symbol-link (from to)
   (check-type from symbol)
   (check-type to symbol)
-  (when (eq (sb-vm::%symbol-link from) to)
-    (return-from add-symbol-link))
-  (when (or (symbolp (sb-vm::%symbol-link from))
-            (loop for sym = to then (sb-vm::%symbol-link sym)
-                  thereis (eq from sym)
-                  while (symbolp (sb-vm::%symbol-link sym))))
-    (error "Can't add symbol link"))
-  (push (symbol-name from) (package-%symbol-links (symbol-package from)))
-  (sb-vm::%set-symbol-link from to)
-  (sb-vm::%set-symbol-linked-by to (list* from (sb-vm::%symbol-linked-by to))))
+  (%add-package-local-nickname from to))
+
+#+symbol-links
+(defun %remove-symbol-link (from)
+  (when (symbolp (sb-vm::%symbol-link from))
+    (when (symbol-package from)
+      (setf (package-%symbol-links (symbol-package from))
+            (remove (symbol-name from)
+                    (package-%symbol-links (symbol-package from))
+                    :test #'string=)))
+    (let ((to (sb-vm::%symbol-link from)))
+      (sb-vm::%set-symbol-linked-by to (remove from (sb-vm::%symbol-linked-by to))))
+    (sb-vm::%set-symbol-link from 0)
+    t))
 
 #+symbol-links
 (defun remove-symbol-link (from)
   (check-type from symbol)
-  (unless (symbolp (sb-vm::%symbol-link from))
-    (error "There is no symbol link to remove"))
-  (setf (package-%symbol-links (symbol-package from))
-        (remove (symbol-name from) (package-%symbol-links (symbol-package from))
-                :test #'string=))
-  (let ((to (sb-vm::%symbol-link from)))
-    (sb-vm::%set-symbol-linked-by to (remove from (sb-vm::%symbol-linked-by to))))
-  (sb-vm::%set-symbol-link from 0))
+  (%remove-symbol-link from))
 
-(declaim (inline %follow-symbol-links))
-(defun %follow-symbol-links (symbol)
-  #+symbol-links
-  (when *follow-symbol-links*
-    (loop while (symbolp (sb-vm::%symbol-link symbol))
-          do (setf symbol (sb-vm::%symbol-link symbol))))
-  symbol)
+#+symbol-links
+(defmacro %follow-symbol-links (symbol-var)
+  `(when *follow-symbol-links*
+     (loop while (symbolp (sb-vm::%symbol-link ,symbol-var))
+           do (setf ,symbol-var (sb-vm::%symbol-link ,symbol-var)))))
 
 ;;; Check internal and external symbols, then scan down the list
 ;;; of hashtables for inherited symbols.
@@ -1378,9 +1402,11 @@ Experimental: interface subject to change."
   (let ((hash (compute-symbol-hash string length)))
     (declare (hash-code hash))
     (with-symbol ((symbol) (package-internal-symbols package) string length hash)
-      (return-from %find-symbol (values (%follow-symbol-links symbol) :internal)))
+      #+symbol-links (%follow-symbol-links symbol)
+      (return-from %find-symbol (values symbol :internal)))
     (with-symbol ((symbol) (package-external-symbols package) string length hash)
-      (return-from %find-symbol (values (%follow-symbol-links symbol) :external)))
+      #+symbol-links (%follow-symbol-links symbol)
+      (return-from %find-symbol (values symbol :external)))
     (let* ((tables (package-tables package))
            (n (length tables)))
       (unless (eql n 0)
@@ -1394,7 +1420,8 @@ Experimental: interface subject to change."
                                     (svref tables i))
                          string length hash)
              (setf (package-mru-table-index package) i)
-             (return-from %find-symbol (values (%follow-symbol-links symbol) :inherited)))
+             #+symbol-links (%follow-symbol-links symbol)
+             (return-from %find-symbol (values symbol :inherited)))
            (if (< (decf i) 0) (setq i (1- n)))
            (if (= i start) (return)))))))
   (values nil nil))
