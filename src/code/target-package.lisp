@@ -1360,7 +1360,7 @@ Experimental: interface subject to change."
 
 #+symbol-links
 (defun (setf %symbol-linked-by) (value symbol)
-  (setf (gethahs symbol *symbol->symbol-linked-by*) value))
+  (setf (gethash symbol *symbol->symbol-linked-by*) value))
 
 #+symbol-links
 (defun symbol-linked-by (symbol)
@@ -1369,6 +1369,18 @@ Experimental: interface subject to change."
 
 #+symbol-links
 (declaim (inline %add-symbol-link %remove-symbol-link))
+
+#+symbol-links
+(defun %remove-symbol-link (from)
+  (multiple-value-bind (link link-p) (%symbol-link from)
+    (when link-p
+      (when (symbol-package from)
+        (setf (package-%symbol-links (symbol-package from))
+              (remove (symbol-name from) (package-%symbol-links (symbol-package from)) :test #'string=)))
+      (setf (%symbol-linked-by link)
+            (remove from (sb-vm::%symbol-linked-by link)))
+      (setf (%symbol-link from) 0)
+      t)))
 
 #+symbol-links
 (defun %add-symbol-link (from to)
@@ -1394,6 +1406,8 @@ Experimental: interface subject to change."
       (progn
         (setf (%symbol-link from) to)
         (push from (%symbol-linked-by to))
+        (when (symbol-package from)
+          (push (symbol-name from) (package-%symbol-links (symbol-package from))))
         t)))
 
 #+symbol-links
@@ -1401,20 +1415,6 @@ Experimental: interface subject to change."
   (check-type from symbol)
   (check-type to symbol)
   (%add-symbol-link from to))
-
-#+symbol-links
-(defun %remove-symbol-link (from)
-  (multiple-value-bind (link link-p) (%symbol-link from)
-    (when link-p
-      (when (symbol-package from)
-        (setf (package-%symbol-links (symbol-package from))
-              (remove (symbol-name from)
-                      (package-%symbol-links (symbol-package from))
-                      :test #'string=)))
-      (setf (%symbol-linked-by link)
-            (remove from (sb-vm::%symbol-linked-by link)))
-      (setf (%symbol-link from) 0)
-      t)))
 
 #+symbol-links
 (defun remove-symbol-link (from)
@@ -1737,7 +1737,7 @@ uninterned."
               (return-from unintern t)))
           #+symbol-links
           (setf (package-%symbol-links package)
-                (remove (symbol-name symbol) (package-%symbol-links package)))
+                (remove (symbol-name symbol) (package-%symbol-links package) :test #'string=))
           (setf (package-%shadowing-symbols package)
                 (remove symbol shadowing-symbols))) ; would not DELETE be ok?
 

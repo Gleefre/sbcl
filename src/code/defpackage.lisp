@@ -584,8 +584,8 @@ specifies to signal a warning if SWANK package is in variance, and an error othe
           (let ((*package* (find-package :keyword)))
             (note-package-variance
              :format-control "~A also has the following symbol links:~%  ~S"
-             :format-arguments (list name (mapcar (lambda (name)
-                                                    (cons name (sb-vm::%symbol-link (intern name package))))
+             :format-arguments (list name (mapcar (lambda (symbol-name)
+                                                    (cons symbol-name (sb-vm::%symbol-link (intern name package))))
                                                   no-longer-linked))
              :package package))
         (drop-them ()
