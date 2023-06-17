@@ -1,3 +1,57 @@
+For SBCL's README see below
+
+This is a fork that tries to implement symbol links.
+
+To use them you need to build SBCL with symbol-links feature:
+./make.sh --with-symbol-links
+
+Symbol links attempt to provide similar functionality to python's
+  from math import factorial as f
+
+You can create a link from one symbol to another that is resolved at
+read time when SB-EXT:*FOLLOW-SYMBOL-LINKS* is T.
+
+Usage:
+
+(sb-ext:add-symbol-link 'mvb 'multiple-value-bind)
+; => T
+
+(mvb (x y) (values 1 2)
+  (list x y))
+; => (1 2)
+
+(defpackage #:lib
+  (:linked-import-from #:alexandria
+                       (#:comb #:binomial-coefficient))
+  (:export #:comb))
+
+(lib:comb 10 3)
+; => 120
+
+(defpackage #:lib2
+  (:links (#:*abbrs* #:*abbreviations*)
+  (:export #:*abbrs* #:*abbreviations*))
+
+(eq 'lib2:*abbrs* 'lib2:*abbreviations*)
+; => T
+
+To remove link:
+(setf sb-ext:*follow-symbol-links* nil)
+(sb-ext:remove-symbol-link 'mvb)
+(setf sb-ext:*follow-symbol-links* t)
+
+or
+
+(sb-ext:symbol-linked-by 'multiple-value-bind)
+; => (MVB)
+(sb-ext:remove-symbol-link (car *))
+; => T
+
+
+
+======================================================================
+=========================== SBCL's README ============================
+======================================================================
 GENERAL INFORMATION
 
 Welcome to SBCL.
