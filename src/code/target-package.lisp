@@ -2078,7 +2078,7 @@ PACKAGE."
 (defun pkg-name= (a b) (and (not (eql a 0)) (string= a b)))
 (defun !package-cold-init (&aux (specs (cdr *!initial-symbols*)))
   ;; (setq *sym-lookups* 0 *sym-hit-1st-try* 0)
-  #+symbol-links (setq sb-ext:*follow-symbol-links* nil)
+  #+symbol-links (setq sb-ext:*follow-symbol-links* t)
   #+symbol-links (setq *symbol->symbol-link* (make-hash-table))
   #+symbol-links (setq *symbol->symbol-linked-by* (make-hash-table))
   (setf *package-graph-lock* (sb-thread:make-mutex :name "Package Graph Lock"))
