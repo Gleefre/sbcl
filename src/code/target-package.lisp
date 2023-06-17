@@ -1378,7 +1378,7 @@ Experimental: interface subject to change."
         (setf (package-%symbol-links (symbol-package from))
               (remove (symbol-name from) (package-%symbol-links (symbol-package from)) :test #'string=)))
       (setf (%symbol-linked-by link)
-            (remove from (sb-vm::%symbol-linked-by link)))
+            (remove from (%symbol-linked-by link)))
       (setf (%symbol-link from) 0)
       t)))
 
