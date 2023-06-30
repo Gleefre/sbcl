@@ -615,7 +615,7 @@ Return VALUE without evaluating it."
        (enclose start ctran (list leaf))
        (values leaf ctran)))
     ((legal-fun-name-p thing)
-     (values (find-lexically-apparent-fun thing "as the argument to FUNCTION")
+     (values (find-lexically-apparent-fun thing "as the argument to FUNCTION" t)
              start))
     (t
      (compiler-error "~S is not a legal function name." thing))))

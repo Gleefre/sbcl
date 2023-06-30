@@ -265,15 +265,18 @@
                        (find-global-fun name nil)))))))))
 
 ;;; Return the LEAF structure for the lexically apparent function
-;;; definition of NAME.
-(declaim (ftype (sfunction (t string) leaf) find-lexically-apparent-fun))
-(defun find-lexically-apparent-fun (name context)
+;;; definition of NAME. Uses FIND-GLOBAL-FUN for global function
+;;; definition if NOT-FREE-FUN-P is T, uses FIND-FREE-FUN otherwise.
+(declaim (ftype (sfunction (t string t) leaf) find-lexically-apparent-fun))
+(defun find-lexically-apparent-fun (name context not-free-fun-p)
   (let ((var (lexenv-find name funs :test #'equal)))
     (cond (var
            (unless (leaf-p var)
              (aver (and (consp var) (eq (car var) 'macro)))
              (compiler-error "found macro name ~S ~A" name context))
            var)
+          (not-free-fun-p
+           (find-global-fun name nil))
           (t
            (find-free-fun name context)))))
 
@@ -1251,7 +1254,7 @@
                                     :where "FTYPE declaration"))
            (t
             (res (cons (find-lexically-apparent-fun
-                        name "in a function type declaration")
+                        name "in a function type declaration" nil)
                        type))))))
       (if (res)
           (make-lexenv :default res :type-restrictions (res))
@@ -1374,7 +1377,7 @@
         (if fvar
             (setf (functional-inlinep fvar) sense)
             (let ((found (find-lexically-apparent-fun
-                          name "in an inline or notinline declaration")))
+                          name "in an inline or notinline declaration" nil)))
               (etypecase found
                 (functional
                  (when (policy *lexenv* (>= speed inhibit-warnings))
