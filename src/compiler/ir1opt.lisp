@@ -2040,8 +2040,6 @@
       ((or constant functional) t)
       (lambda-var
        (null (lambda-var-sets leaf)))
-      (defined-fun
-       (not (eq (defined-fun-inlinep leaf) 'notinline)))
       (global-var
        (case (global-var-kind leaf)
          (:global-function
