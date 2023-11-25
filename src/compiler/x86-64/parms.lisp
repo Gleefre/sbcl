@@ -88,7 +88,7 @@
 ;;; would be possible, but probably not worth the time and code bloat
 ;;; it would cause. -- JES, 2005-12-11
 
-#+(or linux darwin)
+#+(or (and linux (not android) darwin))
 (gc-space-setup #x50000000
                      :read-only-space-size 0
                      :fixedobj-space-size #.(* 40 1024 1024)
@@ -97,6 +97,13 @@
 
 ;;; The default dynamic space size is lower on OpenBSD to allow SBCL to
 ;;; run under the default 1G data size limit.
+
+#+android
+(gc-space-setup #x60000000
+                     :read-only-space-size 0
+                     :fixedobj-space-size #.(* 40 1024 1024)
+                     :text-space-size #.(* 130 1024 1024)
+                     :dynamic-space-start #x1000000000)
 
 #-(or linux darwin)
 (gc-space-setup #x20000000
