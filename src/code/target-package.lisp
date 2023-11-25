@@ -1422,6 +1422,9 @@ Experimental: interface subject to change."
   (%remove-symbol-link from))
 
 #+symbol-links
+(defvar *follow-symbol-links*)
+
+#+symbol-links
 (defmacro %follow-symbol-links (symbol-var)
   (let ((link (gensym))
         (link-p (gensym)))
