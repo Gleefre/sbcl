@@ -160,4 +160,13 @@ void *os_dlsym_default(char *name); // Why not in 'os.h' ?
 #define NO_SANITIZE_MEMORY
 #endif
 
+#ifdef LISP_FEATURE_ANDROID
+#include <android/log.h>
+#define TAG "SBCL"
+#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,    TAG, __VA_ARGS__)
+#define LOGW(...) __android_log_print(ANDROID_LOG_WARN,     TAG, __VA_ARGS__)
+#define LOGI(...) __android_log_print(ANDROID_LOG_INFO,     TAG, __VA_ARGS__)
+#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG,    TAG, __VA_ARGS__)
+#endif
+
 #endif /* _SBCL_RUNTIME_H_ */
