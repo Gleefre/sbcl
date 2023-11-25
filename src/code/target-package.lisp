@@ -1335,6 +1335,12 @@ Experimental: interface subject to change."
     (do-packages (package) (push package result))
     result))
 
+
+#+symbol-links
+(defvar *symbol->symbol-link* (make-hash-table))
+#+symbol-links
+(defvar *symbol->symbol-linked-by* (make-hash-table))
+
 #+symbol-links
 (declaim (inline %symbol-link))
 #+symbol-links
@@ -1422,7 +1428,7 @@ Experimental: interface subject to change."
   (%remove-symbol-link from))
 
 #+symbol-links
-(defvar *follow-symbol-links*)
+(defvar *follow-symbol-links* t)
 
 #+symbol-links
 (defmacro %follow-symbol-links (symbol-var)
