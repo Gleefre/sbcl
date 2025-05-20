@@ -1251,7 +1251,8 @@ of SBCL which maintained the CMU-CL-style split into two packages.)")
            "UTF8-STRING"
            "VALUES"
            "VOID"
-           "WITH-ALIEN"))
+           "WITH-ALIEN"
+           "GET-POINTER-FROM-C"))
 
 (defpackage "SB-UNIX"
   (:documentation
