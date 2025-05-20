@@ -20,3 +20,13 @@ extern char * software_version () {
     return 0;
   return strdup(u.release);
 }
+
+void* stored_pointer;
+
+void pass_pointer_to_lisp (void* pointer) {
+  stored_pointer = pointer;
+}
+
+void* get_pointer_from_c (void) {
+  return stored_pointer;
+}
