@@ -45,6 +45,20 @@ maybe_compile() {
     fi
 }
 
+genheaders_pull_tempdir() {
+    if [ "$1" = "ANDROID-GENHEADERS-PULL-TEMPDIR" ]; then
+        temp="$2"
+        dir="$3"
+        if [ "$dir" = "done" ]; then
+            rm -r $temp
+        else
+            adb pull $dir $temp
+        fi
+    else
+        echo "something is wrong..."
+    fi
+}
+
 echo "adb shell \"(cd /data/local/tmp/sbcl/tests; LD_LIBRARY_PATH=/data/local/tmp/sbcl/android-libs ./run-tests.sh $@)\""
 adb shell "(cd /data/local/tmp/sbcl/tests; LD_LIBRARY_PATH=/data/local/tmp/sbcl/android-libs ./run-tests.sh $@)" 2>&1 | \
     while read line; do
@@ -52,5 +66,6 @@ adb shell "(cd /data/local/tmp/sbcl/tests; LD_LIBRARY_PATH=/data/local/tmp/sbcl/
         echo "$line" ;
         case "$line" in
             ANDROID-RUN-C-COMPILER*) maybe_compile $line ;;
+            ANDROID-GENHEADERS-PULL-TEMPDIR*) genheaders_pull_tempdir $line ;;
         esac
     done

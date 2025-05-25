@@ -37,11 +37,23 @@ obj=$TEST_DIRECTORY/test.o
 # no files exist if the generator test was entirely skipped
 if [ -r $TEST_DIRECTORY/cons.h ]
 then
-    for i in $TEST_DIRECTORY/*.h
-    do
-          echo "#include \"$i\"" > ${src}
-          ./run-compiler.sh -I../src/runtime -c -o ${obj} ${src}
-    done
+    if [ "$SBCL_SOFTWARE_TYPE" = "Android" ]; then
+        temp=android_tempdir
+        echo "ANDROID-GENHEADERS-PULL-TEMPDIR $temp $TEST_DIRECTORY"
+        for i in $TEST_DIRECTORY/*.h
+        do
+            echo "#include \"$temp/$(basename $i)\"" > ${src}
+            ./run-compiler.sh -I../src/runtime -c -o ${obj} ${src}
+            rm ${obj}
+        done
+        echo "ANDROID-GENHEADERS-PULL-TEMPDIR $temp done"
+    else
+        for i in $TEST_DIRECTORY/*.h
+        do
+            echo "#include \"$i\"" > ${src}
+            ./run-compiler.sh -I../src/runtime -c -o ${obj} ${src}
+        done
+    fi
 fi
 
 exit $EXIT_TEST_WIN
