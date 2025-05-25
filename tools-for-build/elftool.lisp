@@ -1748,7 +1748,9 @@ lisp_fun_linkage_space: .zero ~:*~D
               #-immobile-space (move-dynamic-code-to-text-space input-pathname tmp)
               #+immobile-space
               ;; input core could be readonly
-              (run-program "cp" `("--no-preserve=mode" ,input-pathname ,tmp)
+              ;; on android cp doesn't support --no-preserve
+              (run-program "cp" `(#-android "--no-preserve=mode" ,input-pathname ,tmp)
+                           :output t :error :output
                            :search t))
              (:mark-region-gc
               ;; Assume that the free space in the core hasn't been squashed out yet.
