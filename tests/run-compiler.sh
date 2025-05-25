@@ -47,5 +47,24 @@ while [ $# -gt 0 ]; do
     fi
 done
 
-echo "/ $CC $args $@"
-"$CC" $args "$@"
+if [ "$SBCL_SOFTWARE_TYPE" = "Android" ]; then
+    echo "ANDROID-RUN-C-COMPILER $(pwd) $args $@"
+    out=
+    for arg in "$@"; do
+        if [ "$out" = "next" ]; then out=$arg; fi
+        case "$arg" in -o) out="next" ;; esac
+    done
+    # KLUDGE: wait for the output file to appear
+    waited=0
+    while [ ! -f "$out" ] && [ "$waited" -lt 100 ]; do
+        waited=$(expr $waited + 1)
+        sleep 0.1;
+    done
+    sleep 0.1;  # wait for adb to finish copying if needed
+    if [ ! -f "$out" ]; then
+        echo "failed to compile" && exit 1
+    fi
+else
+    echo "/ $CC $args $@"
+    "$CC" $args "$@"
+fi

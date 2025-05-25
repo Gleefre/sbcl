@@ -16,23 +16,17 @@
 #+sb-thread (sb-impl::finalizer-thread-stop)
 (use-package :sb-alien)
 
-(defun run (program &rest arguments)
-  (let* ((proc nil)
-         (output
-          (with-output-to-string (s)
-            (setf proc (run-program program arguments
-                                    :output s)))))
+(defun run-no-output (program &rest arguments)
+  (let ((proc (run-program program arguments
+                           :output t :error :output)))
     (unless (zerop (process-exit-code proc))
-      (error "Bad exit code: ~S~%Output:~% ~S"
-             (process-exit-code proc)
-             output))
-    output))
+      (error "Bad exit code: ~S" (process-exit-code proc)))))
 
 (defvar *delete* nil)
 (unless (probe-file "kill-non-lisp-thread.so")
-  (run "/bin/sh" "run-compiler.sh" "-sbcl-pic" "-sbcl-shared"
-       "-O3" "-I" "../src/runtime/"
-       "kill-non-lisp-thread.c" "-o" "kill-non-lisp-thread.so")
+  (run-no-output "/bin/sh" "run-compiler.sh" "-sbcl-pic" "-sbcl-shared"
+                 "-O3" "-I" "../src/runtime/"
+                 "kill-non-lisp-thread.c" "-o" "kill-non-lisp-thread.so")
   (setq *delete* t))
 (load-shared-object (truename "kill-non-lisp-thread.so"))
 

@@ -26,7 +26,8 @@
   (unless (probe-file "alien-struct-by-value.so")
     (sb-ext:run-program "/bin/sh" '("run-compiler.sh" "-sbcl-pic" "-sbcl-shared"
                                     "-o" "alien-struct-by-value.so"
-                                    "alien-struct-by-value.c")))
+                                    "alien-struct-by-value.c")
+                        :output t :error :output))
   (setq *soname* (truename "alien-struct-by-value.so"))
   (load-shared-object *soname*))
 
