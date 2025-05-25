@@ -1,10 +1,12 @@
 #ifndef _X86_64_ANDROID_OS_H
 #define _X86_64_ANDROID_OS_H
 
+// FIXME: *-android-os.h probably should NOT redefine stuff from *-linux-os.h
+
 typedef ucontext_t os_context_t;
 typedef long os_context_register_t;
 
-unsigned long os_context_fp_control(os_context_t *context);
+unsigned int os_context_fp_control(os_context_t *context);
 #define RESTORE_FP_CONTROL_FROM_CONTEXT
 void os_restore_fp_control(os_context_t *context);
 
