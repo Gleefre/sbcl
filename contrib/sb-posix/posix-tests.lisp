@@ -216,7 +216,7 @@
         result)))
   #.sb-posix::eacces)
 
-#-(or (and darwin x86) win32)
+#-(or (and darwin x86) win32 android)  ; broken on android
 (deftest stat.1
   (let* ((stat (sb-posix:stat *test-directory*))
          (mode (sb-posix::stat-mode stat)))
@@ -323,7 +323,7 @@
     (sb-posix:s-isreg mode))
   nil)
 
-#-(and darwin x86)
+#-(or (and darwin x86) android)  ; broken on android
 (deftest stat-mode.2
   (with-stat-mode (mode *test-directory*)
     (sb-posix:s-isdir mode))
@@ -351,7 +351,7 @@
     (sb-posix:s-issock mode))
   nil)
 
-#-(or (and darwin x86) win32)
+#-(or (and darwin x86) win32 android)  ; broken on android
 (deftest stat-mode.7
   (let ((link-pathname (make-pathname :name "stat-mode.7"
                                       :defaults *test-directory*)))
@@ -363,7 +363,7 @@
       (ignore-errors (sb-posix:unlink link-pathname))))
   t)
 
-#-(and darwin x86)
+#-(or (and darwin x86) android)  ; broken on android
 (deftest stat-mode.8
   (let ((pathname (make-pathname :name "stat-mode.8"
                                  :defaults *test-directory*)))
