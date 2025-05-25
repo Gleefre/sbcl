@@ -59,6 +59,20 @@ genheaders_pull_tempdir() {
     fi
 }
 
+make_reloc_test() {
+    if [ "$1" = "ANDROID-MAKE-RELOC-TEST" ]; then
+        if [ -f ../src/runtime/heap-reloc-test ]; then
+           rm ../src/runtime/heap-reloc-test
+        fi
+        (cd ../src/runtime ; make heap-reloc-test)
+        adb push ../src/runtime/heap-reloc-test /data/local/tmp/sbcl/src/runtime/heap-reloc-test
+        rm ../src/runtime/heap-reloc-test
+        echo "done"
+    else
+        echo "something is wrong..."
+    fi
+}
+
 echo "adb shell \"(cd /data/local/tmp/sbcl/tests; LD_LIBRARY_PATH=/data/local/tmp/sbcl/android-libs ./run-tests.sh $@)\""
 adb shell "(cd /data/local/tmp/sbcl/tests; LD_LIBRARY_PATH=/data/local/tmp/sbcl/android-libs ./run-tests.sh $@)" 2>&1 | \
     while read line; do
@@ -67,5 +81,6 @@ adb shell "(cd /data/local/tmp/sbcl/tests; LD_LIBRARY_PATH=/data/local/tmp/sbcl/
         case "$line" in
             ANDROID-RUN-C-COMPILER*) maybe_compile $line ;;
             ANDROID-GENHEADERS-PULL-TEMPDIR*) genheaders_pull_tempdir $line ;;
+            ANDROID-MAKE-RELOC-TEST*) make_reloc_test $line ;;
         esac
     done
