@@ -294,7 +294,6 @@ fi
 if [ -n "$SBCL_ANDROID_CROSS" ]; then
     echo "SBCL_ANDROID_CROSS=\"$SBCL_ANDROID_CROSS\"; export SBCL_ANDROID_CROSS" >> output/build-config
 fi
-echo "android=$android; export android" >> output/build-config
 
 # And now, sorting out the per-target dependencies...
 
@@ -781,7 +780,7 @@ else
         $GNUMAKE -C tools-for-build determine-endianness -I ../src/runtime
         tools-for-build/determine-endianness >> $ltf
     fi
-    export sbcl_os sbcl_arch android
+    export sbcl_os sbcl_arch
     sh tools-for-build/grovel-features.sh >> $ltf
 fi
 
