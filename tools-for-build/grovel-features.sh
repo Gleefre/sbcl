@@ -1,6 +1,9 @@
 # Automated platform feature testing
 cd ./tools-for-build > /dev/null
-. ./android_run.sh
+if [ -n "$SBCL_ANDROID_CROSS" ]
+then
+    . ./android_run.sh
+fi
 
 # FIXME: Use this to test for dlopen presence and hence
 # load-shared-object buildability
@@ -13,7 +16,7 @@ featurep() {
     bin="$1-test"
     featurename=${2:-$1}
     rm -f $bin
-    if $android
+    if [ -n "$SBCL_ANDROID_CROSS" ]
     then
         $CC -I../src/runtime -ldl -o $bin $bin.c > /dev/null 2>&1
 	exit_code=`android_run_for_exit_code $bin`

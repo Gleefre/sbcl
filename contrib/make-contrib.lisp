@@ -13,7 +13,8 @@
 (defun run-defs-to-lisp (inputs output)
   (flet ((invoke (string &rest args)
            #+android
-           (when (string= string "RUN-C-COMPILER")
+           (when (and (string= string "RUN-C-COMPILER")
+                      (string= (sb-ext:posix-getenv "SBCL_ANDROID_CROSS") "true"))
              (format t "~a ~{~a~^ ~}~%" string args)
              (sleep 5) ;; FIXME: should check if the file was compiled
              (return-from invoke 0))

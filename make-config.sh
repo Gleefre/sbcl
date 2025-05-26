@@ -384,7 +384,7 @@ echo //ensuring the existence of output/ directory
 if [ ! -d output ] ; then mkdir output; fi
 
 echo //guessing default target CPU architecture from host architecture
-if $android
+if [ -n "$SBCL_ANDROID_CROSS" ]
 then
     uname_arch=`adb shell uname -m`
 else
@@ -456,7 +456,7 @@ if [ "$sbcl_arch" = "" ] ; then
     exit 1
 fi
 
-if $android
+if [ -n "$SBCL_ANDROID_CROSS" ]
 then
     case $sbcl_arch in
         arm64) TARGET_TAG=aarch64-linux-android ;;
@@ -588,7 +588,7 @@ case "$sbcl_os" in
 		printf ' :largefile' >> $ltf
 		;;
         esac
-        if $android
+        if [ -n "$SBCL_ANDROID_CROSS" ]
         then
             link_or_copy Config.$sbcl_arch-android Config
             link_or_copy $sbcl_arch-android-os.h target-arch-os.h
@@ -660,8 +660,10 @@ case "$sbcl_os" in
         if [ $sbcl_arch = "arm64" ]; then
             printf ' :darwin-jit :gcc-tls' >> $ltf
         fi
-        if $android; then
-            echo "Android build is unsupported on darwin"
+        if [ -n "$SBCL_ANDROID_CROSS" ]; then
+            # FIXME: should probably work, but requires testing
+            echo "Crosscompiling for android with NDK and adb is not supported on darwin"
+            exit 1
         fi
         link_or_copy $sbcl_arch-darwin-os.h target-arch-os.h
         link_or_copy bsd-os.h target-os.h
@@ -695,7 +697,7 @@ case "$sbcl_os" in
 esac
 cd "$original_dir"
 
-if $android
+if [ -n "$SBCL_ANDROID_CROSS" ]
 then
     . tools-for-build/android_run.sh
 fi
@@ -715,7 +717,7 @@ case "$sbcl_arch" in
   x86-64)
     printf ' :sb-simd-pack :sb-simd-pack-256 :avx2' >> $ltf # not mandatory
 
-    if $android; then
+    if [ -n "$SBCL_ANDROID_CROSS" ]; then
         $GNUMAKE -C tools-for-build avx2 2> /dev/null
         if ! android_run tools-for-build/avx2 ; then
             SBCL_CONTRIB_BLOCKLIST="$SBCL_CONTRIB_BLOCKLIST sb-simd"
@@ -768,7 +770,7 @@ else
     # cross-compilers!
     #
     # FIXME: integrate to grovel-features, mayhaps
-    if $android
+    if [ -n "$SBCL_ANDROID_CROSS" ]
     then
         $CC tools-for-build/determine-endianness.c -o tools-for-build/determine-endianness
         android_run tools-for-build/determine-endianness >> $ltf
