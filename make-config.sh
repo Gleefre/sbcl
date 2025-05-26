@@ -291,6 +291,9 @@ fi
 if [ -n "$SBCL_TARGET_LOCATION" ]; then
     echo "SBCL_TARGET_LOCATION=\"$SBCL_TARGET_LOCATION\"; export SBCL_TARGET_LOCATION" >> output/build-config
 fi
+if [ -n "$SBCL_ANDROID_CROSS" ]; then
+    echo "SBCL_ANDROID_CROSS=\"$SBCL_ANDROID_CROSS\"; export SBCL_ANDROID_CROSS" >> output/build-config
+fi
 echo "android=$android; export android" >> output/build-config
 
 # And now, sorting out the per-target dependencies...
