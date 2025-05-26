@@ -12,12 +12,11 @@
 
 (defun run-defs-to-lisp (inputs output)
   (flet ((invoke (string &rest args)
-           #+android
-           (when (and (string= string "RUN-C-COMPILER")
-                      (string= (sb-ext:posix-getenv "SBCL_ANDROID_CROSS") "true"))
-             (format t "~a ~{~a~^ ~}~%" string args)
-             (sleep 5) ;; FIXME: should check if the file was compiled
-             (return-from invoke 0))
+           #.(when (string= (sb-ext:posix-getenv "SBCL_ANDROID_CROSS") "true")
+               '(when (string= string "RUN-C-COMPILER")
+                  (format t "~a ~{~a~^ ~}~%" string args)
+                  (sleep 5) ;; FIXME: should check if the file was compiled
+                  (return-from invoke 0)))
            (apply (find-symbol string "SB-GROVEL") args)))
     (let ((c-file (merge-pathnames "runme.c" output))
           (all-headers)
