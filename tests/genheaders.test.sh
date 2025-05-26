@@ -37,7 +37,7 @@ obj=$TEST_DIRECTORY/test.o
 # no files exist if the generator test was entirely skipped
 if [ -r $TEST_DIRECTORY/cons.h ]
 then
-    if [ -n "$SBCL_ANDROID_CROSS" ]; then
+    if [ -n "${SBCL_ANDROID_CROSS:-}" ]; then
         temp=android_tempdir
         echo "ANDROID-GENHEADERS-PULL-TEMPDIR $temp $TEST_DIRECTORY"
         for i in $TEST_DIRECTORY/*.h

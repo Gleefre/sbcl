@@ -18,7 +18,7 @@ test_sbcl=../src/runtime/heap-reloc-test
 rm -f $test_sbcl
 
 set -e
-if [ -n "$SBCL_ANDROID_CROSS" ]; then
+if [ -n "${SBCL_ANDROID_CROSS:-}" ]; then
     echo "ANDROID-MAKE-RELOC-TEST"
     out=$test_sbcl
     # KLUDGE: wait for the output file to appear
