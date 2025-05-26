@@ -470,9 +470,17 @@ then
              ;;
         x86-64) TARGET_TAG=x86_64-linux-android ;;
     esac
+    if [ -z $NDK ]; then
+        echo "Can't find Android NDK, please specify --ndk=</path/to/ndk> or set the $NDK environment variable"
+        exit 1
+    fi
     HOST_TAG=$sbcl_os-x86_64
     TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/$HOST_TAG
     export CC=$TOOLCHAIN/bin/$TARGET_TAG$ANDROID_API-clang
+    if [ ! -f $CC ]; then
+        echo "Can't find the android crosscompiler at $CC"
+        exit 1
+    fi
     echo "CC=$CC; export CC" >> output/build-config
     echo "NDK=$NDK" > output/ndk-config
     echo "HOST_TAG=$HOST_TAG" >> output/ndk-config
