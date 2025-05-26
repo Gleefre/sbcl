@@ -47,7 +47,7 @@ while [ $# -gt 0 ]; do
     fi
 done
 
-if [ "$SBCL_SOFTWARE_TYPE" = "Android" ]; then
+if [ -n "$SBCL_ANDROID_CROSS" ]; then
     echo "ANDROID-RUN-C-COMPILER $(pwd) $args $@"
     out=
     for arg in "$@"; do
