@@ -19,12 +19,12 @@ featurep() {
     if [ -n "$SBCL_ANDROID_CROSS" ]
     then
         $CC -I../src/runtime -ldl -o $bin $bin.c > /dev/null 2>&1
-	exit_code=`android_run_for_exit_code $bin`
+	exit_code=`[ -f $bin ] && android_run_for_exit_code $bin`
     else
         $GNUMAKE $bin -I ../src/runtime > /dev/null 2>&1 && echo "input" | ./$bin> /dev/null 2>&1
 	exit_code="$?"
     fi
-    if [ "$exit_code" -eq 104 ]
+    if [ -n "$exit_code" ] && [ "$exit_code" -eq 104 ]
     then
         printf " :$featurename"
     fi
