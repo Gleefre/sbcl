@@ -2,6 +2,7 @@
 set -e
 
 build_started=`date`
+export SBCL_ANDROID_CROSS=true
 
 ./make-config.sh "$@" --with-android --without-gcc-tls --check-host-lisp || exit $?
 
@@ -16,7 +17,7 @@ $SBCL_XC_HOST < tools-for-build/canonicalize-whitespace.lisp || exit 1
 
 adb push ./ /data/local/tmp/sbcl/
 
-adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=/data/local/tmp/sbcl/android-libs sh make-target-2.sh"
+adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=/data/local/tmp/sbcl/android-libs SBCL_ANDROID_CROSS=true sh make-target-2.sh"
 
 # Hack needed to replace SB-GROVEL:RUN-C-COMPILER
 compile_one() {
@@ -30,7 +31,7 @@ compile_one() {
     rm $bin.c
 }
 
-adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=/data/local/tmp/sbcl/android-libs sh make-target-contrib-android.sh" | \
+adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=/data/local/tmp/sbcl/android-libs SBCL_ANDROID_CROSS=true sh make-target-contrib-android.sh" | \
     while read line ;
       do echo "$line" ;
       echo $line | grep "RUN-C-COMPILER" | while read line ; do compile_one $line ; done ;
