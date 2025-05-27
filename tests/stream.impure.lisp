@@ -669,9 +669,10 @@
       (read-char-no-hang stream)
       (assert (< (- (get-universal-time) time) 2)))))
 
+;; mkfifo won't succeed on an unrooted Android (permission denied)
 #-win32
 (with-test (:name (open :interrupt)
-                  :skipped-on (or :win32 (:and :darwin :sb-safepoint)))
+                  :skipped-on (or :win32 (:and :darwin :sb-safepoint) :android))
   (let ((to 0))
     (with-scratch-file (fifo)
            ;; Make a FIFO
@@ -698,7 +699,7 @@
 ;; routine had filled an input buffer. Now we'll return as soon as a request
 ;; is satisfied, or on EOF. (https://bugs.launchpad.net/sbcl/+bug/643686)
 #-win32
-(with-test (:name :overeager-character-buffering :skipped-on :win32)
+(with-test (:name :overeager-character-buffering :skipped-on (or :win32 :android))
   (let ((use-threads #+sb-thread t)
         (proc nil)
         (sem (sb-thread:make-semaphore)))
