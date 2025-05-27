@@ -271,8 +271,8 @@
                        (with-output-to-string (s)
                          (setf stream s)
                          (setf process
-                               (run-program "/bin/sh" '("-c" "echo OK; exit 42") :pty s
-                                                                                 :wait nil))
+                               (run-program (or #+android (posix-getenv "SHELL") "/bin/sh")
+                                            '("-c" "echo OK; exit 42") :pty s :wait nil))
                          (process-wait process)
                          (assert (= (process-exit-code process) 42))
                          s)))))))
@@ -364,7 +364,7 @@
   (let* ((directory #-win32 "/"
                     #+win32 "c:\\")
          (out (process-output
-               (run-program #-win32 "/bin/sh"
+               (run-program #-win32 (or #+android (posix-getenv "SHELL") "/bin/sh")
                             #-win32 '("-c" "pwd")
                             #+win32 "cmd.exe"
                             #+win32 '("/c" "cd")
@@ -376,7 +376,7 @@
             (string-right-trim '(#\Return) (read-line out))))))
 
 (with-test (:name (run-program :directory-nil))
-  (run-program #-win32 "/bin/sh"
+  (run-program #-win32 (or #+android (posix-getenv "SHELL") "/bin/sh")
                #-win32 '("-c" "pwd")
                #+win32 "cmd.exe"
                #+win32 '("/c" "cd")
@@ -385,7 +385,7 @@
 
 (with-test (:name (run-program :bad-options))
   (assert-error
-   (run-program #-win32 "/bin/sh"
+   (run-program #-win32 (or #+android (posix-getenv "SHELL") "/bin/sh")
                 #-win32 '("-c" "pwd")
                 #+win32 "cmd.exe"
                 #+win32 '("/c" "cd")
@@ -489,8 +489,9 @@
   (when (probe-file "/dev/fd")
     (with-open-file (stream "/dev/null")
       (let* ((fd (sb-sys:fd-stream-fd stream))
-             (process (run-program "test" (list "-e" (format nil "/dev/fd/~a" fd))
-                                   :search t)))
+             (process #-android (run-program "test" (list "-e" (format nil "/dev/fd/~a" fd)) :search t)
+                      #+android (run-program (or (posix-getenv "SHELL") "/system/bin/sh")
+                                             (list "-c" (format nil "test -e /dev/fd/~a" fd)))))
         (assert (not (zerop (process-exit-code process))))))))
 
 ;; PROCESS-CLOSE's contract is "close the streams and stop updating

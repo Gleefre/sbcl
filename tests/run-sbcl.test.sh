@@ -14,10 +14,18 @@ test_run_sbcl() (
     ## There are three ways run-sbcl.sh can fail or set things up badly.
     # (1) run-sbcl.sh will refuse to run because there are no build
     # artifacts relative to $run_sbcl_path.
-    "$1" $args
+    if [ ! -f /bin/sh ]; then
+        sh "$1" $args
+    else
+        "$1" $args
+    fi
     # (2) SBCL will start, but if SBCL_HOME is wrong, will be unable to
     # load contribs. (This is what 9d5be5e953 partially addressed.)
-    "$1" $args --eval '(require :sb-posix)'
+    if [ ! -f /bin/sh ]; then
+        sh "$1" $args --eval '(require :sb-posix)'
+    else
+        "$1" $args --eval '(require :sb-posix)'
+    fi
     # (3) SBCL will start, but if SBCL_HOME is a relative pathname,
     # then loading contribs will be sensitive to the dynamic value of
     # *DEFAULT-PATHNAME-DEFAULTS*. (There appears not to be consensus
@@ -28,16 +36,29 @@ test_run_sbcl() (
     # when SBCL-HOMEDIR-PATHNAME is relative, we'll construct a
     # default directory pathname known not to exist, so that any merge
     # with it will also not exist.
-    "$1" $args --eval '(setq *default-pathname-defaults*
-                             (loop for i upfrom 0 below 1000
-                                   as directory
-                                     = (pathname
-                                        (format nil "/nosuchdir.~d/" i))
-                                   unless (probe-file directory)
-                                   return directory
-                                   finally
-                                (error "test setup failure")))' \
-               --eval '(require :sb-posix)'
+    if [ ! -f /bin/sh ]; then
+        sh "$1" $args --eval '(setq *default-pathname-defaults*
+                                   (loop for i upfrom 0 below 1000
+                                         as directory
+                                           = (pathname
+                                              (format nil "/nosuchdir.~d/" i))
+                                         unless (probe-file directory)
+                                         return directory
+                                         finally
+                                      (error "test setup failure")))' \
+                     --eval '(require :sb-posix)'
+    else
+        "$1" $args --eval '(setq *default-pathname-defaults*
+                                 (loop for i upfrom 0 below 1000
+                                       as directory
+                                         = (pathname
+                                            (format nil "/nosuchdir.~d/" i))
+                                       unless (probe-file directory)
+                                       return directory
+                                       finally
+                                    (error "test setup failure")))' \
+                   --eval '(require :sb-posix)'
+    fi
 )
 
 # Sanity check: test the file in our build tree a couple of ways.

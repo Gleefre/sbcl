@@ -1,7 +1,7 @@
 /*
- * This is the ARM64 Android incarnation of arch-dependent OS-dependent
- * routines. See also "android-os.c". Most of the OS-dependent things
- * are implemented in arm64-linux-os.c
+ * The ARM64 Android incarnation of arch-dependent OS-dependent routines.
+ * See also "arm64-linux-os.c", "android-os.c" and "linux-os.c".
+ * Most of the OS-dependent things are implemented in "arm64-linux-os.c".
  */
 
 /*

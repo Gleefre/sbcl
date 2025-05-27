@@ -28,11 +28,13 @@ tmpscript=$TEST_FILESTEM.lisp-script
 case "$SBCL_MACHINE_TYPE" in
     X86-64)
         cat > $tmpscript <<EOF
-(let ((x (make-array (min (1- array-total-size-limit) (1- (expt 2 32)))
-                     :element-type '(unsigned-byte 8))))
-  (assert (> (sb-kernel:dynamic-usage) (length x)))
-  ;; prevent compiler from getting too smart...
-  (eval x)
+(progn
+  #-(and android mark-region-gc)  ;; broken on android (emulator or ADB crashes)
+  (let ((x (make-array (min (1- array-total-size-limit) (1- (expt 2 32)))
+                       :element-type '(unsigned-byte 8))))
+    (assert (> (sb-kernel:dynamic-usage) (length x)))
+    ;; prevent compiler from getting too smart...
+    (eval x))
   (sb-ext:exit :code $EXIT_LISP_WIN))
 EOF
         run_sbcl_with_args --dynamic-space-size 5GB $SBCL_ARGS \

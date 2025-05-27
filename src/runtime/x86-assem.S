@@ -357,7 +357,14 @@ GNAME(lspmain):
 	pushl	%ebp		# Save old frame pointer.
 	movl	%esp,%ebp	# Establish new frame.
 #ifndef LISP_FEATURE_WIN32
-	movl    GNAME(all_threads),%eax
+#ifdef LISP_FEATURE_ANDROID
+	call	__x86.get_pc_thunk.ax
+	addl	$_GLOBAL_OFFSET_TABLE_, %eax
+	movl	GNAME(all_threads)@GOT(%eax),%eax
+	movl	(%eax),%eax
+#else
+	movl	GNAME(all_threads),%eax
+#endif
 	/* pthread machinery takes care of this for other threads */
 	movl    THREAD_CONTROL_STACK_END_OFFSET(%eax) ,%esp
 #else
@@ -704,7 +711,14 @@ GNAME(arch_scrub_control_stack):
 	 * guard page upper bound in ECX, and our hard guard
 	 * page upper bound in EDX. */
 	lea	-4(%esp), %eax
+#ifdef LISP_FEATURE_ANDROID
+	call	__x86.get_pc_thunk.dx
+	addl	$_GLOBAL_OFFSET_TABLE_, %edx
+	movl	GNAME(os_vm_page_size)@GOT(%edx),%edx
+	movl	(%edx),%edx
+#else
 	mov	GNAME(os_vm_page_size),%edx
+#endif
 	mov	%edx, %ecx
 	add	8(%esp), %ecx
 	add	12(%esp), %edx
@@ -757,3 +771,26 @@ ascs_check_loop:
 ascs_finished:
 	ret
 	SIZE(GNAME(arch_scrub_control_stack))
+
+#ifdef LISP_FEATURE_ANDROID
+/* utilities to obtain PC used for getting the GOT address */
+	.text
+	.globl	__x86.get_pc_thunk.ax
+	.hidden	__x86.get_pc_thunk.ax
+	TYPE(__x86.get_pc_thunk.ax)
+	.align	4,0x90
+__x86.get_pc_thunk.ax:
+	movl	(%esp), %eax
+	ret
+	SIZE(__x86.get_pc_thunk.ax)
+
+	.text
+	.globl	__x86.get_pc_thunk.dx
+	.hidden	__x86.get_pc_thunk.dx
+	TYPE(__x86.get_pc_thunk.dx)
+	.align	4,0x90
+__x86.get_pc_thunk.dx:
+	movl	(%esp), %edx
+	ret
+	SIZE(__x86.get_pc_thunk.dx)
+#endif

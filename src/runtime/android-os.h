@@ -13,8 +13,8 @@
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <signal.h>
+#include <ucontext.h>
 #include <string.h>
-#include <strings.h>
  /* #include <dlfcn.h> */
 #include <sys/time.h>
 #include <sys/stat.h>
@@ -22,6 +22,9 @@
 #include <sys/syscall.h>
 #include <asm/unistd.h>
 #include <linux/version.h>
+
+// Needed for bzero
+#include <strings.h>
 
 // Needs to be defined before including target-arch.h
 typedef caddr_t os_vm_address_t;
@@ -37,5 +40,9 @@ typedef int os_vm_prot_t;
 /* Note that this must be higher than the highest numbered
  * synchronously generated signal that we handle (that is SIGSEGV),
  * due to Linux signal handling pecularities. See thread "Signal
- * delivery order" from 2009-03-14 on kernel-devel@vger.kernel.org. */
+ * delivery order" from 2009-03-14 on kernel-devel@vger.kernel.org.
+ * https://lkml.org/lkml/2009/3/14/133
+ */
+#ifndef SIG_STOP_FOR_GC // choose you own signal if you must
 #define SIG_STOP_FOR_GC (SIGUSR2)
+#endif

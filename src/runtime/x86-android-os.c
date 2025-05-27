@@ -1,7 +1,7 @@
 /*
- * The ARM Android incarnation of arch-dependent OS-dependent routines.
- * See also "arm-linux-os.c", "android-os.c" and "linux-os.c".
- * Most of the OS-dependent things are implemented in "arm-linux-os.c".
+ * The x86 Android incarnation of arch-dependent OS-dependent routines.
+ * See also "x86-linux-os.c", "android-os.c" and "linux-os.c".
+ * Most of the OS-dependent things are implemented in "x86-linux-os.c".
  */
 
 /*

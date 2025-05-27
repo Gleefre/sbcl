@@ -69,8 +69,14 @@ if [ "$CORE_DEFINED" = "no" ]; then
     CORE="$BASE"/output/sbcl.core
 fi
 
-if [ -d "$BASE"/android-libs ]; then
-    export LD_LIBRARY_PATH="$BASE"/android-libs
+# run-tests-android.sh sets LD_LIBRARY_PATH on its own; so this is
+# only useful for running sbcl from the adb shell.
+#
+# per-arch libraries from android-libs/arch as well as those in
+# android-libs are copied by make-config.sh into output/android-libs,
+# so we don't need to guess the build architecture here.
+if [ -d "$BASE"/output/android-libs ]; then
+    export LD_LIBRARY_PATH="$BASE"/output/android-libs:"$LD_LIBRARY_PATH"
 fi
 
 if build_directory_p "$BASE"; then

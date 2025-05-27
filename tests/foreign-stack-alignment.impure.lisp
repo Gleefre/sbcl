@@ -24,8 +24,20 @@
              (process-exit-code proc)
              output))
     output))
+
+(defun run-no-output (program &rest arguments)
+  (let ((proc (run-program program arguments
+                           :output t :error :output
+                           :search (or #+win32 t))))
+    (unless (zerop (process-exit-code proc))
+      (error "Bad exit code: ~S" (process-exit-code proc)))
+    :ok))
+
 (defun cc (&rest arguments)
-  (apply #'run #+unix "./run-compiler.sh" #+win32 "gcc" arguments))
+  (apply #'run-no-output #+unix (or #+android (posix-getenv "SHELL") "/bin/sh")
+                         #+unix "run-compiler.sh"
+                         #+win32 "gcc"
+                         arguments))
 
 (defvar *required-alignment*
   (or #+arm 8

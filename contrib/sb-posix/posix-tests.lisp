@@ -247,8 +247,8 @@
 (deftest stat.5
     (let* ((stat-1 (sb-posix:stat "/"))
            (inode-1 (sb-posix:stat-ino stat-1))
-           (stat-2 (sb-posix:stat "/bin/sh"
-                                   stat-1))
+           (stat-2 (sb-posix:stat (or #+android (sb-ext:posix-getenv "SHELL") "/bin/sh")
+                                  stat-1))
            (inode-2 (sb-posix:stat-ino stat-2)))
       (values
        (eq stat-1 stat-2)
@@ -921,7 +921,9 @@
 
 #-win32
 (deftest mkstemp.null-terminate
-    (let* ((default (make-pathname :directory '(:absolute "tmp")))
+    ;; FIXME: use TMPDIR here, or better add *temp-dir* or (get-temp-dir) to test-util.lisp
+    ;; Can't use *test-directory* here since it could easily be longer than 64 characters.
+    (let* ((default (make-pathname :directory '(:absolute #+android "data" #+android "local" "tmp")))
            (filename (namestring (make-pathname :name "mkstemp-1"
                                                 :type "XXXXXX"
                                                 :defaults default)))
@@ -938,7 +940,7 @@
           (unwind-protect
                (values (integerp fd) (subseq temp 0 (position #\. temp)))
             (delete-file temp))))
-  t "/tmp/mkstemp-1")
+  t #-android "/tmp/mkstemp-1" #+android "/data/local/tmp/mkstemp-1")
 
 (deftest envstuff
     (let ((name1 "ASLIFJLSDKFJKAHGSDKLJH")

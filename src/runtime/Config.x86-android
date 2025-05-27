@@ -17,15 +17,18 @@ CONFIG_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
 CC=${TOOLCHAIN}/bin/${TARGET_TAG}${ANDROID_API}-clang
 LD=${TOOLCHAIN}/${TARGET_TAG}/bin/ld
 
-ASSEM_SRC = arm-assem.S
-ARCH_SRC = arm-arch.c
+ASSEM_SRC = x86-assem.S
+ARCH_SRC = x86-arch.c
 
-CFLAGS += -marm -march=armv7-a
+CFLAGS += -m32
+LINKFLAGS += -m32
+__LDFLAGS__ = -m elf_i386
 
-OS_SRC = linux-os.c linux-mman.c arm-linux-os.c android-os.c arm-android-os.c
+OS_SRC = linux-os.c linux-mman.c x86-linux-os.c android-os.c x86-android-os.c
 OS_LIBS = -ldl
 
 # On Android -no-pie is not supported
+# See GNUMakefile -- this might be a problem for 32-bit builds...
 DISABLE_PIE=no
 
 CFLAGS += -std=gnu99 -Wunused-parameter -fno-omit-frame-pointer -momit-leaf-frame-pointer
@@ -50,7 +53,9 @@ ifdef LISP_FEATURE_SB_CORE_COMPRESSION
   OS_LIBS += -lzstd
 endif
 
-# libunwind?
+ifdef HAVE_LIBUNWIND
+  OS_LIBS += -lunwind
+endif
 
 # mark-region gc and immobile space aren't supported
 GC_SRC = fullcgc.c gencgc.c traceroot.c
