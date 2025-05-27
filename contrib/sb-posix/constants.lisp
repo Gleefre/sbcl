@@ -313,31 +313,37 @@
  #-(and win32 ucrt)
  (:structure alien-stat
              ("struct stat"
+              #-(and android (not 64-bit))
               (mode-t mode "mode_t" "st_mode")
-              #-android
+              #+(and android (not 64-bit))
+              ((unsigned 32) mode "unsigned int" "st_mode")
+              #-(and android (not 64-bit))
               (ino-t ino "ino_t" "st_ino")
-              #+android
+              #+(and android (not 64-bit))
               ((unsigned 64) ino "unsigned long long" "st_ino")
               ;; Linux/MIPS uses unsigned long instead of dev_t here.
-              #-(or mips android)
+              #-(or mips (and android (not 64-bit)))
               (dev-t dev "dev_t" "st_dev")
               #+mips
               ((unsigned 32) dev "dev_t" "st_dev")
-              #+android
+              #+(and android (not 64-bit))
               ((unsigned 64) dev "unsigned long long" "st_dev")
+              #-(and android x86-64)
               (nlink-t nlink "nlink_t" "st_nlink")
+              #+(and android x86-64)
+              ((unsigned 32) nlink "unsigned long" "st_nlink")
               (uid-t uid "uid_t" "st_uid")
               ;; Linux/MIPS uses unsigned long instead of dev_t here.
-              #-(or mips android)
+              #-(or mips (and android (not 64-bit)))
               (dev-t rdev "dev_t" "st_rdev")
               #+mips
               ((unsigned 32) rdev "dev_t" "st_rdev")
-              #+android
-              ((unsigned 64) rdev "unsigned long long"  "st_rdev")
+              #+(and android (not 64-bit))
+              ((unsigned 64) rdev "unsigned long long" "st_rdev")
               (gid-t gid "gid_t" "st_gid")
-              #-android
+              #-(and android (not 64-bit))
               (off-t size "off_t" "st_size")
-              #+android
+              #+(and android (not 64-bit))
               ((signed 64) size "long long" "st_size")
               (time-t atime "time_t" "st_atime")
               (time-t mtime "time_t" "st_mtime")
