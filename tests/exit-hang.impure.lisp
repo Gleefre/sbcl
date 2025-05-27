@@ -26,7 +26,8 @@
     (with-scratch-file (solib "so")
       (sb-ext:run-program "/bin/sh"
                           `("run-compiler.sh" "-sbcl-pic" "-sbcl-shared"
-                            "-o" ,solib "fcb-threads.c"))
+                            "-o" ,solib "fcb-threads.c")
+                          :output t :error :output)
       (sb-alien:load-shared-object solib)))
 #+(and linux gc-stress) (invoke-restart 'run-tests::skip-file)
 ;;; Final test: EXIT does not lock up due to (simulated) C++ destructors
