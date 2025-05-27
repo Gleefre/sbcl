@@ -16,7 +16,22 @@ test_sbcl=../src/runtime/heap-reloc-test
 rm -f $test_sbcl
 
 set -e
-(cd ../src/runtime ; make heap-reloc-test)
+if [ -n "${SBCL_ANDROID_CROSS:-}" ]; then
+    echo "ANDROID-MAKE-RELOC-TEST"
+    out=$test_sbcl
+    # KLUDGE: wait for the output file to appear
+    waited=0
+    while [ ! -f "$out" ] && [ "$waited" -lt 100 ]; do
+        waited=$(expr $waited + 1)
+        sleep 0.1;
+    done
+    sleep 0.1;  # wait for ADB to finish copying if needed
+    if [ ! -f "$out" ]; then
+        echo "failed to compile" && exit 1
+    fi
+else
+    (cd ../src/runtime ; make heap-reloc-test)
+fi
 
 # Exercise all the lines of 'fakemap' by starting up N times in a row.
 # KLUDGE: assume N = 6

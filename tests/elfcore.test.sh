@@ -38,7 +38,7 @@ EOF
 set +e # no exit on error
 
 run_sbcl <<EOF
-  #+(and linux elf sb-thread)
+  #+(and linux elf sb-thread (not android))
   (let ((s (find-symbol "IMMOBILE-SPACE-OBJ-P" "SB-KERNEL")))
     (when (and s (funcall s #'car)) (exit :code 0))) ; good
   (exit :code 2) ; otherwise

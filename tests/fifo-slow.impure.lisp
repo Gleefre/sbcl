@@ -1,7 +1,8 @@
 (require :sb-posix)
+;; mkfifo won't succeed on an unrooted Android (permission denied)
 #-win32
 (with-test (:name (open :interrupt)
-                  :skipped-on (or :win32 (:and :darwin :sb-safepoint)))
+                  :skipped-on (or :win32 (:and :darwin :sb-safepoint) :android))
   (let ((to 0))
     (with-scratch-file (fifo)
            ;; Make a FIFO

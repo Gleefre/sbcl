@@ -669,8 +669,10 @@
 ;; We used to not return from read on a named pipe unless the external-format
 ;; routine had filled an input buffer. Now we'll return as soon as a request
 ;; is satisfied, or on EOF. (https://bugs.launchpad.net/sbcl/+bug/643686)
+;;
+;; mkfifo won't succeed on an unrooted Android (permission denied)
 #-win32
-(with-test (:name :overeager-character-buffering :skipped-on :win32)
+(with-test (:name :overeager-character-buffering :skipped-on (or :win32 :android))
   (let ((use-threads #+sb-thread t)
         (proc nil)
         (sem (sb-thread:make-semaphore)))

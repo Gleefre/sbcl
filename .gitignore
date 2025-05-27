@@ -14,6 +14,7 @@
 output
 obj
 local-target-features.lisp-expr
+android-libs
 customize-target-features.*
 customize-backend-subfeatures.*
 src/assembly/target
@@ -37,6 +38,7 @@ tests/test-status.lisp-expr
 tests/test.log
 tests/*.so
 tests/run-tests-*
+!tests/run-tests-android.sh
 tests/last-random-state.lisp-expr
 tests/ansi-test/
 tools-for-build/avx2*
