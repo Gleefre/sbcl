@@ -49,9 +49,6 @@ perform_host_lisp_check=no
 fancy=false
 some_options=false
 android=false
-if [ -z "$ANDROID_API" ]; then
-    ANDROID_API=21
-fi
 for option
 do
   optarg_ok=true
@@ -111,6 +108,12 @@ do
       --android-api=)
         $optarg_ok && ANDROID_API=$optarg
         ;;
+      --android-target-location=)
+        $optarg_ok && SBCL_ANDROID_TARGET_LOCATION=$optarg
+        ;;
+      --adb-options=)
+        $optarg_ok && SBCL_ADB_OPTIONS=$optarg
+        ;;
       --ndk=)
         $optarg_ok && NDK=$optarg
         ;;
@@ -153,7 +156,7 @@ then
   cat <<EOF
 \`make.sh' drives the SBCL build.
 
-Usage: $0 [OPTION]...
+Usage: make.sh [OPTION]...
 
   Important: make.sh does not currently control the entirety of the
   build: configuration file customize-target-features.lisp and certain
@@ -237,8 +240,102 @@ Options:
        user@host-machine:/home/user/sbcl
                   Transfer the files to/from directory /home/user/sbcl
                   on host-machine.
+EOF
+  if [ -n "$SBCL_ANDROID_CROSS" ]; then
+    cat <<EOF
+
+\`make-android.sh' drives the SBCL Android cross-build using Android NDK.
+
+Usage: make-android.sh [OPTION]...
+
+  Warning: The Android NDK cross-build toolchain for SBCL is not
+  stable yet, breaking changes are possible.
+
+  All of the make.sh options apply to this script as well.
+
+  To cross-build SBCL for Android:
+
+    1) Install the Android SDK and NDK. Set up the NDK environment
+       variable, and make sure that \`adb' can be found through PATH.
+
+    2) An android device connected to ADB is required during the
+       build. This can be an emulator, or a physical android device
+       with USB debugging enabled in developer options.
+
+       You can choose the specific device to be used with by passing
+       the --adb-options build option (see below).
+
+    3) Optional: Put additional prebuilt shared libraries and headers
+       into ./android-libs or ./android-libs/<arch>, where <arch> is
+       the target architecture recognized by sbcl.
+
+       <arch> should be one of x86-64, arm64, x86, arm.
+
+           Note: while x86 and arm are present in this list, these
+           archtectures are not yet supported and are here for the
+           sake of completeness only.
+
+       The following libraries are meaningful:
+       - libzstd.so      This is required for core compression.
+
+         The following headers are also required:
+           zstd.h, zstd_errors.h, zdict.h
+
+       - libcapstone.so  This is required for the sb-capstone contrib.
+       - libgmp.so       This is required for the sb-gmp contrib.
+       - libmpfr.so      This is required for the sb-mpfr contrib.
+
+    4) Run the ./make-android.sh script.
+
+       This will copy the source directory onto the target device and
+       use it for genesis, to compile the sbcl core, and to compile
+       sbcl contribs. This directory can be later used to run tests.
+
+       You can choose the specific directory to be used with by
+       passing the --android-target-location option (see below).
+
+    5) Optional: run tests with run-tests-android.sh:
+
+         (cd tests; ./run-tests-android.sh)
+
+    6) Optional: run sbcl from the adb shell (change the path to the
+       sbcl directory if needed):
+
+         adb shell /data/local/tmp/sbcl/run-sbcl.sh
+
+make-android.sh specific options:
+  --ndk=<string>       Location of the Android NDK toolchain
+
+      Overrides the NDK environment variable.
+
+  --android-api=<number> Minimum android api to target.
+
+      Must be supported by the NDK and the target android
+      device. Overrides the ANDROID_API environment variable.
+
+      Default api is: 21
+
+  --android-target-location=<string> The directory used on the android device.
+
+      Must be an absolute path. Usually will be a subdirectory of /data/local/tmp.
+
+      Default android target location is: /data/local/tmp/sbcl
+
+  --adb-options=<string> Additional options to be passed to ADB.
+
+      This can be used to select the target android device if there
+      are multiple connected devices.
+
+      Examples:
+        -e          can be used to select the TCP/IP device (e.g. emulator)
+        -d          can be used to select the USB device (e.g. an actual device)
+        -s SERIAL   can be used to select the device with give SERIAL number
+        -t ID       can be used to select the device with given transport id
+
+      See  adb help  for more documentation.
 
 EOF
+  fi
   exit 1
 fi
 
@@ -291,7 +388,36 @@ fi
 if [ -n "$SBCL_TARGET_LOCATION" ]; then
     echo "SBCL_TARGET_LOCATION=\"$SBCL_TARGET_LOCATION\"; export SBCL_TARGET_LOCATION" >> output/build-config
 fi
-echo "android=$android; export android" >> output/build-config
+if [ -n "$SBCL_ANDROID_CROSS" ]; then
+    if [ -z "$SBCL_ADB_OPTIONS" ]; then
+        SBCL_ADB_OPTIONS=""
+    fi
+    if [ -z "$SBCL_ANDROID_TARGET_LOCATION" ]; then
+        SBCL_ANDROID_TARGET_LOCATION=/data/local/tmp/sbcl
+    fi
+    if [ -z "$ANDROID_API" ]; then
+        ANDROID_API=21
+    fi
+
+    if ! command -v adb >/dev/null 2>&1; then
+        echo "ADB not found, can't cross-compile for Android"
+        exit 1
+    elif ! adb $SBCL_ADB_OPTIONS shell "echo"; then
+        echo "adb shell not working. Is the Android device connected?"
+        exit 1
+    fi
+
+    android_device_api="$(adb $SBCL_ADB_OPTIONS shell getprop ro.build.version.sdk)"
+    if [ "$android_device_api" -lt "$ANDROID_API" ]; then
+        echo "ERROR: Target device sdk version ($android_device_api) is less then ANDROID_API ($ANDROID_API)."
+        exit 1
+    fi
+
+    echo "SBCL_ANDROID_CROSS=\"$SBCL_ANDROID_CROSS\"; export SBCL_ANDROID_CROSS" >> output/build-config
+    echo "SBCL_ANDROID_TARGET_LOCATION=\"$SBCL_ANDROID_TARGET_LOCATION\"; export SBCL_ANDROID_TARGET_LOCATION" >> output/build-config
+    echo "SBCL_ADB_OPTIONS=\"$SBCL_ADB_OPTIONS\"; export SBCL_ADB_OPTIONS" >> output/build-config
+    export SBCL_ANDROID_TARGET_LOCATION SBCL_ADB_OPTIONS
+fi
 
 # And now, sorting out the per-target dependencies...
 
@@ -341,7 +467,7 @@ case `uname` in
 esac
 
 link_or_copy() {
-   if [ "$sbcl_os" = "win32" ] ; then
+   if [ "$sbcl_os" = "win32" ] || [ "$android" = "true" ]; then
       # Use preprocessor or makefile includes instead of copying if
       # possible, to avoid unexpected use of the original, unchanged
       # files when re-running only make-target-1 during development.
@@ -352,9 +478,6 @@ link_or_copy() {
       else
          cp -r "$1" "$2"
       fi
-   elif $android ; then
-       # adb push doesn't like symlinks on unrooted devices.
-       cp -r "$1" "$2"
    else
        ln -s "$1" "$2"
    fi
@@ -384,9 +507,9 @@ echo //ensuring the existence of output/ directory
 if [ ! -d output ] ; then mkdir output; fi
 
 echo //guessing default target CPU architecture from host architecture
-if $android
+if [ -n "$SBCL_ANDROID_CROSS" ]
 then
-    uname_arch=`adb shell uname -m`
+    uname_arch=`(adb $SBCL_ADB_OPTIONS shell "uname -m 2>/dev/null || getprop ro.product.cpu.abi") | sed 's/\r//g'`
 else
     uname_arch=`uname -m`
 fi
@@ -456,7 +579,18 @@ if [ "$sbcl_arch" = "" ] ; then
     exit 1
 fi
 
-if $android
+if [ -n "$SBCL_ANDROID_CROSS" ] && [ -d android-libs ]; then
+    mkdir -p output/android-libs
+    find android-libs -maxdepth 1 \( -name '*.so' -o -name '*.h' \) -exec cp '{}' output/android-libs \;
+    if [ -d android-libs/$sbcl_arch ]; then
+        find android-libs/$sbcl_arch -maxdepth 1 \( -name '*.so' -o -name '*.h' \) -exec cp '{}' output/android-libs \;
+    fi
+    # we need these early because of the -Wl,-no-as-needed flag for
+    # the linker that might be used when groveling features
+    (cd output/android-libs; adb $SBCL_ADB_OPTIONS push ./ "$SBCL_ANDROID_TARGET_LOCATION/output/android-libs/")
+fi
+
+if [ -n "$SBCL_ANDROID_CROSS" ]
 then
     case $sbcl_arch in
         arm64) TARGET_TAG=aarch64-linux-android ;;
@@ -470,9 +604,17 @@ then
              ;;
         x86-64) TARGET_TAG=x86_64-linux-android ;;
     esac
+    if [ -z $NDK ]; then
+        echo "Can't find Android NDK, please specify --ndk=</path/to/ndk> or set the $NDK environment variable"
+        exit 1
+    fi
     HOST_TAG=$sbcl_os-x86_64
     TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/$HOST_TAG
     export CC=$TOOLCHAIN/bin/$TARGET_TAG$ANDROID_API-clang
+    if [ ! -f $CC ]; then
+        echo "Can't find the Android cross-compiler at $CC"
+        exit 1
+    fi
     echo "CC=$CC; export CC" >> output/build-config
     echo "NDK=$NDK" > output/ndk-config
     echo "HOST_TAG=$HOST_TAG" >> output/ndk-config
@@ -580,7 +722,7 @@ case "$sbcl_os" in
 		printf ' :largefile' >> $ltf
 		;;
         esac
-        if $android
+        if [ -n "$SBCL_ANDROID_CROSS" ]
         then
             link_or_copy Config.$sbcl_arch-android Config
             link_or_copy $sbcl_arch-android-os.h target-arch-os.h
@@ -652,8 +794,11 @@ case "$sbcl_os" in
         if [ $sbcl_arch = "arm64" ]; then
             printf ' :darwin-jit :gcc-tls' >> $ltf
         fi
-        if $android; then
-            echo "Android build is unsupported on darwin"
+        if [ -n "$SBCL_ANDROID_CROSS" ]; then
+            # FIXME: cross-build with NDK relies on sbcl_os=linux.  Other than
+            # that, there is no obvious reason why this can't work.
+            echo "Cross-compiling for Android with NDK and ADB is not supported on darwin"
+            exit 1
         fi
         link_or_copy $sbcl_arch-darwin-os.h target-arch-os.h
         link_or_copy bsd-os.h target-os.h
@@ -687,7 +832,7 @@ case "$sbcl_os" in
 esac
 cd "$original_dir"
 
-if $android
+if [ -n "$SBCL_ANDROID_CROSS" ]
 then
     . tools-for-build/android_run.sh
 fi
@@ -707,9 +852,10 @@ case "$sbcl_arch" in
   x86-64)
     printf ' :sb-simd-pack :sb-simd-pack-256 :avx2' >> $ltf # not mandatory
 
-    if $android; then
+    if [ -n "$SBCL_ANDROID_CROSS" ]; then
         $GNUMAKE -C tools-for-build avx2 2> /dev/null
-        if ! android_run tools-for-build/avx2 ; then
+        exit_code=`(cd tools-for-build; [ -f avx2 ] && android_run_for_exit_code avx2)`;
+        if [ -n "$exit_code" ] && [ "$exit_code" -eq 0 ]; then
             SBCL_CONTRIB_BLOCKLIST="$SBCL_CONTRIB_BLOCKLIST sb-simd"
         fi
     else
@@ -760,15 +906,14 @@ else
     # cross-compilers!
     #
     # FIXME: integrate to grovel-features, mayhaps
-    if $android
+    $GNUMAKE -C tools-for-build determine-endianness -I ../src/runtime
+    if [ -n "$SBCL_ANDROID_CROSS" ]
     then
-        $CC tools-for-build/determine-endianness.c -o tools-for-build/determine-endianness
         android_run tools-for-build/determine-endianness >> $ltf
     else
-        $GNUMAKE -C tools-for-build determine-endianness -I ../src/runtime
         tools-for-build/determine-endianness >> $ltf
     fi
-    export sbcl_os sbcl_arch android
+    export sbcl_os sbcl_arch
     sh tools-for-build/grovel-features.sh >> $ltf
 fi
 

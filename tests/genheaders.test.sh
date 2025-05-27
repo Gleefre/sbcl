@@ -37,11 +37,30 @@ obj=$TEST_DIRECTORY/test.o
 # no files exist if the generator test was entirely skipped
 if [ -r $TEST_DIRECTORY/cons.h ]
 then
-    for i in $TEST_DIRECTORY/*.h
-    do
-          echo "#include \"$i\"" > ${src}
-          ./run-compiler.sh -I../src/runtime -c -o ${obj} ${src}
-    done
+    if [ -n "${SBCL_ANDROID_CROSS:-}" ]; then
+        temp=android_tempdir
+        flag=$TEST_DIRECTORY/pulled
+        echo "ANDROID-GENHEADERS-PULL-TEMPDIR $temp $TEST_DIRECTORY $flag"
+        # KLUDGE: wait for the output file to appear
+        waited=0
+        while [ ! -f "$flag" ] && [ "$waited" -lt 100 ]; do
+            waited=$(expr $waited + 1)
+            sleep 0.1;
+        done
+        for i in $TEST_DIRECTORY/*.h
+        do
+            echo "#include \"$temp/$(basename $i)\"" > ${src}
+            sh run-compiler.sh -I../src/runtime -c -o ${obj} ${src}
+            rm ${obj}
+        done
+        echo "ANDROID-GENHEADERS-PULL-TEMPDIR $temp done"
+    else
+        for i in $TEST_DIRECTORY/*.h
+        do
+            echo "#include \"$i\"" > ${src}
+            sh run-compiler.sh -I../src/runtime -c -o ${obj} ${src}
+        done
+    fi
 fi
 
 exit $EXIT_TEST_WIN

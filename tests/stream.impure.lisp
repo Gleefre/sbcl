@@ -655,7 +655,8 @@
 ;;; was wrong.  CSR managed to promote the wrongness to all streams in
 ;;; the 1.0.32.x series, breaking slime instantly.
 (with-test (:name (read-char :no-hang-after unread-char) :skipped-on :win32)
-  (let* ((process (run-program "/bin/sh" '("-c" "echo a && sleep 10")
+  (let* ((process (run-program (or #+android (posix-getenv "SHELL") "/bin/sh")
+                               '("-c" "echo a && sleep 10")
                                :output :stream :wait nil))
          (stream (process-output process))
          (char (read-char stream)))
@@ -669,9 +670,10 @@
       (read-char-no-hang stream)
       (assert (< (- (get-universal-time) time) 2)))))
 
+;; mkfifo won't succeed on an unrooted Android (permission denied)
 #-win32
 (with-test (:name (open :interrupt)
-                  :skipped-on (or :win32 (:and :darwin :sb-safepoint)))
+                  :skipped-on (or :win32 (:and :darwin :sb-safepoint) :android))
   (let ((to 0))
     (with-scratch-file (fifo)
            ;; Make a FIFO
@@ -698,7 +700,7 @@
 ;; routine had filled an input buffer. Now we'll return as soon as a request
 ;; is satisfied, or on EOF. (https://bugs.launchpad.net/sbcl/+bug/643686)
 #-win32
-(with-test (:name :overeager-character-buffering :skipped-on :win32)
+(with-test (:name :overeager-character-buffering :skipped-on (or :win32 :android))
   (let ((use-threads #+sb-thread t)
         (proc nil)
         (sem (sb-thread:make-semaphore)))
@@ -728,7 +730,7 @@
                                 (sleep most-positive-fixnum))))))
                     (t
                      (setf proc
-                           (run-program "/bin/sh"
+                           (run-program (or #+android (posix-getenv "SHELL") "/bin/sh")
                                    (list "-c"
                                          (format nil "cat > ~A" (native-namestring fifo)))
                                    :input :stream
