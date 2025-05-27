@@ -2,6 +2,15 @@
 set -e
 
 build_started=`date`
+export SBCL_ANDROID_CROSS=true
+
+if ! command -v adb >/dev/null 2>&1; then
+    echo "ADB not found, can't cross-compile for Android"
+    exit 1
+elif ! adb shell "echo"; then
+    echo "adb shell not working. Is the Android device connected?"
+    exit 1
+fi
 
 ./make-config.sh "$@" --with-android --without-gcc-tls --check-host-lisp || exit $?
 
@@ -16,7 +25,7 @@ $SBCL_XC_HOST < tools-for-build/canonicalize-whitespace.lisp || exit 1
 
 adb push ./ /data/local/tmp/sbcl/
 
-adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=/data/local/tmp/sbcl/android-libs sh make-target-2.sh"
+adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=/data/local/tmp/sbcl/android-libs SBCL_ANDROID_CROSS=true sh make-target-2.sh"
 
 # Hack needed to replace SB-GROVEL:RUN-C-COMPILER
 compile_one() {
@@ -30,7 +39,7 @@ compile_one() {
     rm $bin.c
 }
 
-adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=/data/local/tmp/sbcl/android-libs sh make-target-contrib-android.sh" | \
+adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=/data/local/tmp/sbcl/android-libs SBCL_ANDROID_CROSS=true sh make-target-contrib-android.sh" | \
     while read line ;
       do echo "$line" ;
       echo $line | grep "RUN-C-COMPILER" | while read line ; do compile_one $line ; done ;
