@@ -291,7 +291,9 @@ fi
 if [ -n "$SBCL_TARGET_LOCATION" ]; then
     echo "SBCL_TARGET_LOCATION=\"$SBCL_TARGET_LOCATION\"; export SBCL_TARGET_LOCATION" >> output/build-config
 fi
-echo "android=$android; export android" >> output/build-config
+if [ -n "$SBCL_ANDROID_CROSS" ]; then
+    echo "SBCL_ANDROID_CROSS=\"$SBCL_ANDROID_CROSS\"; export SBCL_ANDROID_CROSS" >> output/build-config
+fi
 
 # And now, sorting out the per-target dependencies...
 
@@ -384,7 +386,7 @@ echo //ensuring the existence of output/ directory
 if [ ! -d output ] ; then mkdir output; fi
 
 echo //guessing default target CPU architecture from host architecture
-if $android
+if [ -n "$SBCL_ANDROID_CROSS" ]
 then
     uname_arch=`adb shell uname -m`
 else
@@ -467,7 +469,7 @@ if [ "$sbcl_arch" = "" ] ; then
     exit 1
 fi
 
-if $android
+if [ -n "$SBCL_ANDROID_CROSS" ]
 then
     case $sbcl_arch in
         arm64) TARGET_TAG=aarch64-linux-android ;;
@@ -481,9 +483,17 @@ then
              ;;
         x86-64) TARGET_TAG=x86_64-linux-android ;;
     esac
+    if [ -z $NDK ]; then
+        echo "Can't find Android NDK, please specify --ndk=</path/to/ndk> or set the $NDK environment variable"
+        exit 1
+    fi
     HOST_TAG=$sbcl_os-x86_64
     TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/$HOST_TAG
     export CC=$TOOLCHAIN/bin/$TARGET_TAG$ANDROID_API-clang
+    if [ ! -f $CC ]; then
+        echo "Can't find the Android cross-compiler at $CC"
+        exit 1
+    fi
     echo "CC=$CC; export CC" >> output/build-config
     echo "NDK=$NDK" > output/ndk-config
     echo "HOST_TAG=$HOST_TAG" >> output/ndk-config
@@ -596,7 +606,7 @@ case "$sbcl_os" in
 		printf ' :largefile' >> $ltf
 		;;
         esac
-        if $android
+        if [ -n "$SBCL_ANDROID_CROSS" ]
         then
             link_or_copy Config.$sbcl_arch-android Config
             link_or_copy $sbcl_arch-android-os.h target-arch-os.h
@@ -670,8 +680,10 @@ case "$sbcl_os" in
         if [ $sbcl_arch = "arm64" ]; then
             printf ' :darwin-jit :gcc-tls' >> $ltf
         fi
-        if $android; then
-            echo "Android build is unsupported on darwin"
+        if [ -n "$SBCL_ANDROID_CROSS" ]; then
+            # FIXME: this probably works, but needs to be tested
+            echo "Cross-compiling for Android with NDK and ADB is not supported on darwin"
+            exit 1
         fi
         link_or_copy $sbcl_arch-darwin-os.h target-arch-os.h
         link_or_copy bsd-os.h target-os.h
@@ -715,7 +727,7 @@ case "$sbcl_os" in
 esac
 cd "$original_dir"
 
-if $android
+if [ -n "$SBCL_ANDROID_CROSS" ]
 then
     . tools-for-build/android_run.sh
 fi
@@ -735,7 +747,7 @@ case "$sbcl_arch" in
   x86-64)
     printf ' :sb-simd-pack :sb-simd-pack-256 :avx2' >> $ltf # not mandatory
 
-    if $android; then
+    if [ -n "$SBCL_ANDROID_CROSS" ]; then
         $GNUMAKE -C tools-for-build avx2 2> /dev/null
         if ! android_run tools-for-build/avx2 ; then
             SBCL_CONTRIB_BLOCKLIST="$SBCL_CONTRIB_BLOCKLIST sb-simd"
@@ -790,7 +802,7 @@ else
     # cross-compilers!
     #
     # FIXME: integrate to grovel-features, mayhaps
-    if $android
+    if [ -n "$SBCL_ANDROID_CROSS" ]
     then
         $CC tools-for-build/determine-endianness.c -o tools-for-build/determine-endianness
         android_run tools-for-build/determine-endianness >> $ltf
@@ -798,7 +810,7 @@ else
         $GNUMAKE -C tools-for-build determine-endianness -I ../src/runtime
         tools-for-build/determine-endianness >> $ltf
     fi
-    export sbcl_os sbcl_arch android
+    export sbcl_os sbcl_arch
     sh tools-for-build/grovel-features.sh >> $ltf
 fi
 
