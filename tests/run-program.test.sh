@@ -47,20 +47,23 @@ run_sbcl --eval "(defvar *exit-ok* $EXIT_LISP_WIN)" <<'EOF'
 
   #+unix
   (defconstant unix-env
-    #+haiku
-    "/bin/env"
-    #-haiku
-    "/usr/bin/env")
+    (flet ((try (path)
+             (when (probe-file path)
+               path)))
+      (or #+android (try "/system/bin/env")
+          #+(or haiku android) (try "/bin/env")
+          #-(or haiku android) (try "/usr/bin/env"))))
 
   ;; Unix environment strings are ordinarily passed with SBCL convention
   ;; (instead of CMU CL alist-of-keywords convention).
   #+unix ; env works differently for msys2 apparently
-  (let ((string (with-output-to-string (stream)
-                  (sb-ext:run-program unix-env ()
-                                      :output stream
-                                      :environment '("FEEFIE=foefum")))))
-    (assert (equal string "FEEFIE=foefum
-")))
+  (when unix-env
+    (let ((string (with-output-to-string (stream)
+                    (sb-ext:run-program unix-env ()
+                                        :output stream
+                                        :environment '("FEEFIE=foefum")))))
+      (assert (equal string "FEEFIE=foefum
+"))))
 
 ;;; Try to obtain file descriptors numerically greater than FD_SETSIZE
 ;;; (which is usually 1024) to show that run-program uses poll() rather
@@ -102,22 +105,24 @@ run_sbcl --eval "(defvar *exit-ok* $EXIT_LISP_WIN)" <<'EOF'
   ;; for the parent process. (I.e., we behave like perl and lots of
   ;; other programs, but not like CMU CL.)
   #+unix
-  (let* ((sb-impl::*default-external-format* :latin-1)
-         (sb-alien::*default-c-string-external-format* :latin-1)   
-         (string (with-output-to-string (stream)
-                  (sb-ext:run-program unix-env ()
-                                      :output stream)))
-         (expected (apply #'concatenate
-                         'string
-                         (mapcar (lambda (environ-string)
-                                   (concatenate 'string
-                                                environ-string
-                                                (string #\newline)))
-                                 (sb-ext:posix-environ)))))
-    (assert (string= string expected))
-    ;; That's not just because POSIX-ENVIRON is having a bad hair
-    ;; day and returning NIL, is it?
-    (assert (plusp (length (sb-ext:posix-environ)))))
+  (when unix-env
+    (let* ((sb-impl::*default-external-format* :latin-1)
+           (sb-alien::*default-c-string-external-format* :latin-1)
+           (string (with-output-to-string (stream)
+                     (sb-ext:run-program unix-env ()
+                                         :output stream)))
+           (expected (apply #'concatenate
+                            'string
+                            (mapcar (lambda (environ-string)
+                                      (concatenate 'string
+                                                   environ-string
+                                                   (string #\newline)))
+                                    (sb-ext:posix-environ)))))
+      (assert (string= string expected))
+      ;; That's not just because POSIX-ENVIRON is having a bad hair
+      ;; day and returning NIL, is it?
+      (assert (plusp (length (sb-ext:posix-environ))))))
+
   ;; make sure that a stream input argument is basically reasonable.
   (let ((string (let ((i (make-string-input-stream "abcdef")))
                   (with-output-to-string (stream)
