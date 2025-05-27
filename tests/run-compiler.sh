@@ -60,7 +60,7 @@ if [ -n "$SBCL_ANDROID_CROSS" ]; then
         waited=$(expr $waited + 1)
         sleep 0.1;
     done
-    sleep 0.1;  # wait for adb to finish copying if needed
+    sleep 0.1;  # wait for ADB to finish copying if needed
     if [ ! -f "$out" ]; then
         echo "failed to compile" && exit 1
     fi

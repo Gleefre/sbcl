@@ -4,11 +4,11 @@ set -e
 build_started=`date`
 export SBCL_ANDROID_CROSS=true
 
-if [ -z $(! command -v adb) ]; then
-    echo "ADB not found, can't crosscompile for android"
+if ! command -v adb >/dev/null 2>&1; then
+    echo "ADB not found, can't cross-compile for Android"
     exit 1
 elif ! adb shell "echo"; then
-    echo "adb shell not working, is the android device connected?"
+    echo "adb shell not working. Is the Android device connected?"
     exit 1
 fi
 

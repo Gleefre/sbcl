@@ -31,17 +31,12 @@ maybe_compile() {
         adb pull $in $temp.c
         echo $CC $args $temp.c -o $temp
         $CC $args $temp.c -o $temp || echo "fail"
-        if [ -f $temp.h ]; then
-            rm $temp.h
-        fi
         rm $temp.c
         if [ -f $temp ]; then
             adb push $temp $out
             rm $temp
             echo "done"
         fi
-    else
-        echo "something is wrong..."
     fi
 }
 
@@ -54,8 +49,6 @@ genheaders_pull_tempdir() {
         else
             adb pull $dir $temp
         fi
-    else
-        echo "something is wrong..."
     fi
 }
 
@@ -68,8 +61,6 @@ make_reloc_test() {
         adb push ../src/runtime/heap-reloc-test /data/local/tmp/sbcl/src/runtime/heap-reloc-test
         rm ../src/runtime/heap-reloc-test
         echo "done"
-    else
-        echo "something is wrong..."
     fi
 }
 

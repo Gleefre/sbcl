@@ -480,7 +480,7 @@ then
     TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/$HOST_TAG
     export CC=$TOOLCHAIN/bin/$TARGET_TAG$ANDROID_API-clang
     if [ ! -f $CC ]; then
-        echo "Can't find the android crosscompiler at $CC"
+        echo "Can't find the Android cross-compiler at $CC"
         exit 1
     fi
     echo "CC=$CC; export CC" >> output/build-config
@@ -663,8 +663,8 @@ case "$sbcl_os" in
             printf ' :darwin-jit :gcc-tls' >> $ltf
         fi
         if [ -n "$SBCL_ANDROID_CROSS" ]; then
-            # FIXME: should probably work, but requires testing
-            echo "Crosscompiling for android with NDK and adb is not supported on darwin"
+            # FIXME: this probably works, but needs to be tested
+            echo "Cross-compiling for Android with NDK and ADB is not supported on darwin"
             exit 1
         fi
         link_or_copy $sbcl_arch-darwin-os.h target-arch-os.h

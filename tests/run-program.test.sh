@@ -45,23 +45,19 @@ run_sbcl --eval "(defvar *exit-ok* $EXIT_LISP_WIN)" <<'EOF'
 ")))
   (format t ";;; Smoke tests: PASS~%")
 
-  ;; old android might not have env
+  #+unix
   (defconstant unix-env
     (flet ((try (path)
              (when (probe-file path)
                path)))
-      (or #+android
-          (try "/system/bin/env")
-          #+(or haiku android)
-          (try "/bin/env")
-          ;; is it always there though?
-          #-(or haiku android)
-          (try "/usr/bin/env"))))
+      (or #+android (try "/system/bin/env")
+          #+(or haiku android) (try "/bin/env")
+          #-(or haiku android) (try "/usr/bin/env"))))
 
   ;; Unix environment strings are ordinarily passed with SBCL convention
   ;; (instead of CMU CL alist-of-keywords convention).
   #+unix ; env works differently for msys2 apparently
-  (when unix-env  ; old android might not have env
+  (when unix-env
     (let ((string (with-output-to-string (stream)
                     (sb-ext:run-program unix-env ()
                                         :output stream
@@ -109,7 +105,7 @@ run_sbcl --eval "(defvar *exit-ok* $EXIT_LISP_WIN)" <<'EOF'
   ;; for the parent process. (I.e., we behave like perl and lots of
   ;; other programs, but not like CMU CL.)
   #+unix
-  (when unix-env  ; old android might not have env
+  (when unix-env
     (let* ((sb-impl::*default-external-format* :latin-1)
            (sb-alien::*default-c-string-external-format* :latin-1)
            (string (with-output-to-string (stream)
