@@ -42,7 +42,7 @@ $GNUMAKE $SBCL_MAKE_JOBS -C src/runtime all
 # Use a little C program to grab stuff from the C header files and
 # smash it into Lisp source code.
 # -C tools-for-build is broken on some gnu make versions.
-if $android
+if [ -n "$SBCL_ANDROID_CROSS" ]
 then
     ( cd tools-for-build; $CC -I../src/runtime -ldl -o grovel-headers grovel-headers.c)
     . ./tools-for-build/android_run.sh
