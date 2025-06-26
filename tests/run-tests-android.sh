@@ -14,13 +14,6 @@ elif ! adb shell "echo"; then
     exit 1
 fi
 
-if [ -d ../android-libs ]; then
-    adb_ld_lib_path=/data/local/tmp/sbcl/android-libs
-    if [ -d ../android-libs/$SBCL_BUILD_ARCH ]; then
-        adb_ld_lib_path=/data/local/tmp/sbcl/android-libs/$SBCL_BUILD_ARCH:"$adb_ld_lib_path"
-    fi
-fi
-
 # Hack needed to replace run-compiler.sh
 maybe_compile() {
     if [ "$1" = "ANDROID-RUN-C-COMPILER" ]; then
@@ -81,8 +74,8 @@ make_reloc_test() {
     fi
 }
 
-echo "adb shell \"(cd /data/local/tmp/sbcl/tests; LD_LIBRARY_PATH=$adb_ld_lib_path SBCL_ANDROID_CROSS=true ./run-tests.sh $@)\""
-adb shell "(cd /data/local/tmp/sbcl/tests; LD_LIBRARY_PATH=$adb_ld_lib_path SBCL_ANDROID_CROSS=true ./run-tests.sh $@)" 2>&1 | \
+echo "adb shell \"(cd /data/local/tmp/sbcl/tests; LD_LIBRARY_PATH=$SBCL_ANDROID_CROSS_LDLP SBCL_ANDROID_CROSS=true ./run-tests.sh $@)\""
+adb shell "(cd /data/local/tmp/sbcl/tests; LD_LIBRARY_PATH=$SBCL_ANDROID_CROSS_LDLP SBCL_ANDROID_CROSS=true ./run-tests.sh $@)" 2>&1 | \
     while read line; do
         line=$(echo "$line" | sed 's/\r//g')  # On older android line terminates with \r
         echo "$line" ;
