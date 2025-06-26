@@ -45,6 +45,8 @@ adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=/data/local/tmp/sbcl/androi
       echo $line | grep "RUN-C-COMPILER" | while read line ; do compile_one $line ; done ;
     done
 
+adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=$adb_ld_lib_path SBCL_ANDROID_CROSS=true sh make-post-checks.sh"
+
 adb pull /data/local/tmp/sbcl/obj
 adb pull /data/local/tmp/sbcl/output
 
