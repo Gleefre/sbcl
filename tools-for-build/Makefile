@@ -12,7 +12,7 @@
 
 # Do not append to CFLAGS otherwise -I can override the -I below.
 CFLAGS:=-I../src/runtime $(CFLAGS)
-LDFLAGS:=$(LDFLAGS)
+LDFLAGS:=$(LDFLAGS) $(LINKFLAGS)
 LDLIBS:=$(OS_LIBS)
 
 all: grovel-headers determine-endianness where-is-mcontext mmap-rwx avx2
