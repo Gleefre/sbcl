@@ -801,12 +801,11 @@ else
     # cross-compilers!
     #
     # FIXME: integrate to grovel-features, mayhaps
+    $GNUMAKE -C tools-for-build determine-endianness -I ../src/runtime
     if [ -n "$SBCL_ANDROID_CROSS" ]
     then
-        $CC tools-for-build/determine-endianness.c -o tools-for-build/determine-endianness
         android_run tools-for-build/determine-endianness >> $ltf
     else
-        $GNUMAKE -C tools-for-build determine-endianness -I ../src/runtime
         tools-for-build/determine-endianness >> $ltf
     fi
     export sbcl_os sbcl_arch

@@ -18,7 +18,7 @@ featurep() {
     rm -f $bin
     if [ -n "$SBCL_ANDROID_CROSS" ]
     then
-        $CC -I../src/runtime -ldl -o $bin $bin.c > /dev/null 2>&1
+        $GNUMAKE $bin -I ../src/runtime > /dev/null 2>&1
 	exit_code=`[ -f $bin ] && android_run_for_exit_code $bin`
     else
         $GNUMAKE $bin -I ../src/runtime > /dev/null 2>&1 && echo "input" | ./$bin> /dev/null 2>&1
