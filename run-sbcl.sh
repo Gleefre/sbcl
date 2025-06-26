@@ -71,6 +71,7 @@ fi
 
 if [ -d "$BASE"/android-libs ]; then
     export LD_LIBRARY_PATH="$BASE"/android-libs:"$LD_LIBRARY_PATH"
+    # FIXME: what about compiling 32-bit under 64-bit os ?
     case $(uname -m) in
         *86_64 | amd64) arch=x86-64 ;;
         arm64 | aarch64) arch=arm64 ;;

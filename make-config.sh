@@ -461,7 +461,15 @@ fi
 # SBCL_ARCH is used for configuration, so put SBCL_BUILD_ARCH and
 # SBCL_BUILD_OS for other scripts to use into build-config
 echo "SBCL_BUILD_ARCH=$sbcl_arch; export SBCL_BUILD_ARCH" >> output/build-config
-echo "SBCL_BUILD_OS=$sbcl_os; export SBCL_BUILD_ARCH" >> output/build-config
+echo "SBCL_BUILD_OS=$sbcl_os; export SBCL_BUILD_OS" >> output/build-config
+if [ -n "$SBCL_ANDROID_CROSS" ] && [ -d android-libs ]; then
+    SBCL_ANDROID_CROSS_LDLP=/data/local/tmp/sbcl/android-libs
+    if [ -d android-libs/$sbcl_arch ]; then
+        SBCL_ANDROID_CROSS_LDLP=/data/local/tmp/sbcl/android-libs/$sbcl_arch:"$SBCL_ANDROID_CROSS_LDLP"
+    fi
+    echo "SBCL_ANDROID_CROSS_LDLP=$SBCL_ANDROID_CROSS_LDLP; export SBCL_ANDROID_CROSS_LDLP" >> output/build-config
+fi
+. output/build-config
 
 if [ -n "$SBCL_ANDROID_CROSS" ]
 then
