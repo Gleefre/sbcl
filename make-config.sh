@@ -469,18 +469,17 @@ if [ "$sbcl_arch" = "" ] ; then
     exit 1
 fi
 
+# SBCL_ARCH is used for configuration, so put SBCL_BUILD_ARCH and
+# SBCL_BUILD_OS for other scripts to use into build-config
+echo "SBCL_BUILD_ARCH=$sbcl_arch; export SBCL_BUILD_ARCH" >> output/build-config
+echo "SBCL_BUILD_OS=$sbcl_os; export SBCL_BUILD_ARCH" >> output/build-config
+
 if [ -n "$SBCL_ANDROID_CROSS" ]
 then
     case $sbcl_arch in
         arm64) TARGET_TAG=aarch64-linux-android ;;
-        arm) TARGET_TAG=armv7a-linux-androideabi
-             echo "Unsupported configuration"
-             exit 1
-             ;;
-        x86) TARGET_TAG=i686-linux-android
-             echo "Unsupported configuration"
-             exit 1
-             ;;
+        arm) TARGET_TAG=armv7a-linux-androideabi ;;
+        x86) TARGET_TAG=i686-linux-android ;;
         x86-64) TARGET_TAG=x86_64-linux-android ;;
     esac
     if [ -z $NDK ]; then

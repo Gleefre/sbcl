@@ -1,6 +1,8 @@
 #!/bin/sh
 set -e
 
+. output/build-config
+
 export SBCL_TOP="../.."
 export SBCL_HOME="$SBCL_TOP/obj/sbcl-home"
 export SBCL="$SBCL_TOP/src/runtime/sbcl --noinform --core $SBCL_TOP/output/sbcl.core \
@@ -50,15 +52,15 @@ build_system sb-introspect
 build_system sb-cltl2
 build_system sb-aclrepl
 build_system sb-sprof
-if [ -f android-libs/libcapstone.so ]; then
+if [ -f android-libs/libcapstone.so ] || [ -f android-libs/$SBCL_BUILD_ARCH/libcapstone.so ]; then
     build_system sb-capstone
 fi
 build_system sb-rotate-byte
 build_system sb-md5 sb-rotate-byte
 build_system sb-executable
-if [ -f android-libs/libgmp.so ]; then
+if [ -f android-libs/libgmp.so ] || [ -f android-libs/$SBCL_BUILD_ARCH/libcapstone.so ]; then
     build_system sb-gmp
-    if [ -f android-libs/libmpfr.so ]; then
+    if [ -f android-libs/libmpfr.so ] || [ -f android-libs/$SBCL_BUILD_ARCH/libcapstone.so ]; then
         build_system sb-mpfr sb-gmp
     fi
 fi

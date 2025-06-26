@@ -7,28 +7,51 @@
 # written at Carnegie Mellon University and released into the
 # public domain. The software is in the public domain and is
 # provided with absolutely no warranty. See the COPYING and CREDITS
-# files for more informration.
+# files for more information.
 
-CC=${NDK_PATH}/toolchains/arm-linux-androideabi-4.8/prebuilt/linux-x86_64/arm-linux-androideabi/bin/gcc
-CFLAGS += -marm -march=armv5 --sysroot=${NDK_PATH}/platforms/android-15/arch-arm/
-LINKFLAGS += --sysroot=${NDK_PATH}/platforms/android-15/arch-arm/
+-include ../../output/ndk-config
+
+CC=${TOOLCHAIN}/bin/${TARGET_TAG}${ANDROID_API}-clang
+LD=${TOOLCHAIN}/${TARGET_TAG}/bin/ld
 
 ASSEM_SRC = arm-assem.S
 ARCH_SRC = arm-arch.c
 
+CFLAGS += -marm -march=armv7-a
+
 OS_SRC = linux-os.c linux-mman.c arm-linux-os.c android-os.c arm-android-os.c
 OS_LIBS = -ldl
 
-ifdef LISP_FEATURE_GENCGC
-  GC_SRC = fullcgc.c gencgc.c traceroot.c
+# On Android -no-pie is not supported
+DISABLE_PIE=no
+
+CFLAGS += -std=gnu99 -Wunused-parameter -fno-omit-frame-pointer -momit-leaf-frame-pointer
+LINKFLAGS += -Wl,--export-dynamic
+SOFLAGS += -Wl,-soname,libsbcl.so
+OS_LIBS += -Wl,-no-as-needed
+
+# Search for precompiled android libraries in android-libs or android-libs/arch
+CFLAGS += -I../../android-libs/arm -I../../android-libs
+DEPEND_FLAGS += -I../../android-libs/arm -I../../android-libs
+LINKFLAGS += -L../../android-libs/arm -L../../android-libs
+SOFLAGS += -L../../android-libs/arm -L../../android-libs
+
+ifdef LISP_FEATURE_LARGEFILE
+  CFLAGS += -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 endif
 
-ifdef LISP_FEATURE_SB_THREAD
-  OS_LIBS += -lpthread
-endif
+# pthread is part of libc on Android, so there is no need to add it to OS_LIBS
+
 ifdef LISP_FEATURE_SB_CORE_COMPRESSION
   OS_LIBS += -lzstd
 endif
-ifdef LISP_FEATURE_LARGEFILE
-  CFLAGS += -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
+
+# libunwind?
+
+# mark-region gc and immobile space aren't supported
+GC_SRC = fullcgc.c gencgc.c traceroot.c
+
+ifdef LISP_FEATURE_SB_LINKABLE_RUNTIME
+  LIBSBCL = sbcl.o
+  USE_LIBSBCL = sbcl.o
 endif

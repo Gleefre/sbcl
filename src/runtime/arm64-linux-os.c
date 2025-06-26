@@ -1,5 +1,5 @@
 /*
- * This is the ARM Linux incarnation of arch-dependent OS-dependent
+ * This is the ARM64 Linux incarnation of arch-dependent OS-dependent
  * routines. See also "linux-os.c".
  */
 
