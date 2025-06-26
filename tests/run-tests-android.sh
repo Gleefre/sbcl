@@ -4,6 +4,23 @@ set -e
 . ../output/ndk-config
 CC=$TOOLCHAIN/bin/$TARGET_TAG$ANDROID_API-clang
 
+. ../output/build-config
+
+if ! command -v adb >/dev/null 2>&1; then
+    echo "ADB not found, can't cross-test for Android"
+    exit 1
+elif ! adb shell "echo"; then
+    echo "adb shell not working. Is the Android device connected?"
+    exit 1
+fi
+
+if [ -d ../android-libs ]; then
+    adb_ld_lib_path=/data/local/tmp/sbcl/android-libs
+    if [ -d ../android-libs/$SBCL_BUILD_ARCH ]; then
+        adb_ld_lib_path=/data/local/tmp/sbcl/android-libs/$SBCL_BUILD_ARCH:"$adb_ld_lib_path"
+    fi
+fi
+
 # Hack needed to replace run-compiler.sh
 maybe_compile() {
     if [ "$1" = "ANDROID-RUN-C-COMPILER" ]; then
@@ -64,8 +81,8 @@ make_reloc_test() {
     fi
 }
 
-echo "adb shell \"(cd /data/local/tmp/sbcl/tests; LD_LIBRARY_PATH=/data/local/tmp/sbcl/android-libs SBCL_ANDROID_CROSS=true ./run-tests.sh $@)\""
-adb shell "(cd /data/local/tmp/sbcl/tests; LD_LIBRARY_PATH=/data/local/tmp/sbcl/android-libs SBCL_ANDROID_CROSS=true ./run-tests.sh $@)" 2>&1 | \
+echo "adb shell \"(cd /data/local/tmp/sbcl/tests; LD_LIBRARY_PATH=$adb_ld_lib_path SBCL_ANDROID_CROSS=true ./run-tests.sh $@)\""
+adb shell "(cd /data/local/tmp/sbcl/tests; LD_LIBRARY_PATH=$adb_ld_lib_path SBCL_ANDROID_CROSS=true ./run-tests.sh $@)" 2>&1 | \
     while read line; do
         line=$(echo "$line" | sed 's/\r//g')  # On older android line terminates with \r
         echo "$line" ;
