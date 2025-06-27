@@ -44,7 +44,7 @@ compile_one() {
     rm $bin.c
 }
 
-echo adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=$SBCL_ANDROID_CROSS_LDLP SBCL_ANDROID_CROSS=true sh make-target-contrib-android.sh" | wrapper
+echo adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=$SBCL_ANDROID_CROSS_LDLP SBCL_ANDROID_CROSS=true sh make-target-contrib-android.sh" "|" wrapper
 adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=$SBCL_ANDROID_CROSS_LDLP SBCL_ANDROID_CROSS=true sh make-target-contrib-android.sh" | \
     while read line ;
       do echo "$line" ;
