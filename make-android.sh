@@ -12,10 +12,6 @@ elif ! adb shell "echo"; then
     exit 1
 fi
 
-if [ -d android-libs ]; then
-    (cd android-libs; adb push ./ /data/local/tmp/sbcl/android-libs/)
-fi
-
 ./make-config.sh "$@" --with-android --without-gcc-tls --check-host-lisp || exit $?
 
 . output/prefix.def
@@ -29,8 +25,8 @@ $SBCL_XC_HOST < tools-for-build/canonicalize-whitespace.lisp || exit 1
 
 adb push ./ /data/local/tmp/sbcl/
 
-echo adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=$SBCL_ANDROID_CROSS_LDLP SBCL_ANDROID_CROSS=true sh make-target-2.sh"
-adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=$SBCL_ANDROID_CROSS_LDLP SBCL_ANDROID_CROSS=true sh make-target-2.sh"
+echo adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=/data/local/tmp/sbcl/output/android-libs SBCL_ANDROID_CROSS=true sh make-target-2.sh"
+adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=/data/local/tmp/sbcl/output/android-libs SBCL_ANDROID_CROSS=true sh make-target-2.sh"
 
 # Hack needed to replace SB-GROVEL:RUN-C-COMPILER
 compile_one() {
@@ -44,15 +40,15 @@ compile_one() {
     rm $bin.c
 }
 
-echo adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=$SBCL_ANDROID_CROSS_LDLP SBCL_ANDROID_CROSS=true sh make-target-contrib-android.sh" "|" wrapper
-adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=$SBCL_ANDROID_CROSS_LDLP SBCL_ANDROID_CROSS=true sh make-target-contrib-android.sh" | \
+echo adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=/data/local/tmp/sbcl/output/android-libs SBCL_ANDROID_CROSS=true sh make-target-contrib-android.sh" "|" wrapper
+adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=/data/local/tmp/sbcl/output/android-libs SBCL_ANDROID_CROSS=true sh make-target-contrib-android.sh" | \
     while read line ;
       do echo "$line" ;
       echo $line | grep "RUN-C-COMPILER" | while read line ; do compile_one $line ; done ;
     done
 
-echo adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=$SBCL_ANDROID_CROSS_LDLP SBCL_ANDROID_CROSS=true sh make-post-checks.sh"
-adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=$SBCL_ANDROID_CROSS_LDLP SBCL_ANDROID_CROSS=true sh make-post-checks.sh"
+echo adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=/data/local/tmp/sbcl/output/android-libs SBCL_ANDROID_CROSS=true sh make-post-checks.sh"
+adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=/data/local/tmp/sbcl/output/android-libs SBCL_ANDROID_CROSS=true sh make-post-checks.sh"
 
 adb pull /data/local/tmp/sbcl/obj
 adb pull /data/local/tmp/sbcl/output

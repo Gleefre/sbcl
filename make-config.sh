@@ -463,11 +463,14 @@ fi
 echo "SBCL_BUILD_ARCH=$sbcl_arch; export SBCL_BUILD_ARCH" >> output/build-config
 echo "SBCL_BUILD_OS=$sbcl_os; export SBCL_BUILD_OS" >> output/build-config
 if [ -n "$SBCL_ANDROID_CROSS" ] && [ -d android-libs ]; then
-    SBCL_ANDROID_CROSS_LDLP=/data/local/tmp/sbcl/android-libs
+    mkdir -p output/android-libs
+    cp android-libs/*.so android-libs/*.h output/android-libs
     if [ -d android-libs/$sbcl_arch ]; then
-        SBCL_ANDROID_CROSS_LDLP=/data/local/tmp/sbcl/android-libs/$sbcl_arch:"$SBCL_ANDROID_CROSS_LDLP"
+        cp android-libs/$sbcl_arch/*.so android-libs/$sbcl_arch/*.h output/android-libs
     fi
-    echo "SBCL_ANDROID_CROSS_LDLP=$SBCL_ANDROID_CROSS_LDLP; export SBCL_ANDROID_CROSS_LDLP" >> output/build-config
+    # we need these early because of the -Wl,-no-as-needed flag for
+    # the linker that might be used when groveling features
+    (cd output/android-libs; adb push ./ /data/local/tmp/sbcl/output/android-libs/)
 fi
 . output/build-config
 
