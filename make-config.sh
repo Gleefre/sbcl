@@ -469,10 +469,6 @@ if [ "$sbcl_arch" = "" ] ; then
     exit 1
 fi
 
-# SBCL_ARCH is used for configuration, so put SBCL_BUILD_ARCH and
-# SBCL_BUILD_OS for other scripts to use into build-config
-echo "SBCL_BUILD_ARCH=$sbcl_arch; export SBCL_BUILD_ARCH" >> output/build-config
-echo "SBCL_BUILD_OS=$sbcl_os; export SBCL_BUILD_OS" >> output/build-config
 if [ -n "$SBCL_ANDROID_CROSS" ] && [ -d android-libs ]; then
     mkdir -p output/android-libs
     cp android-libs/*.so android-libs/*.h output/android-libs
@@ -483,7 +479,6 @@ if [ -n "$SBCL_ANDROID_CROSS" ] && [ -d android-libs ]; then
     # the linker that might be used when groveling features
     (cd output/android-libs; adb push ./ /data/local/tmp/sbcl/output/android-libs/)
 fi
-. output/build-config
 
 if [ -n "$SBCL_ANDROID_CROSS" ]
 then
