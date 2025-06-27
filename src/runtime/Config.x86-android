@@ -36,12 +36,12 @@ LINKFLAGS += -Wl,--export-dynamic
 SOFLAGS += -Wl,-soname,libsbcl.so
 OS_LIBS += -Wl,-no-as-needed
 
-# Search for precompiled android libraries in android-libs or android-libs/arch
+# Search for precompiled android libraries in output/android-libs
 # Use a relative path so that it works in tools-for-build
-CFLAGS += -I$(CONFIG_DIR)../../android-libs/x86 -I$(CONFIG_DIR)../../android-libs
-DEPEND_FLAGS += -I$(CONFIG_DIR)../../android-libs/x86 -I$(CONFIG_DIR)../../android-libs
-LINKFLAGS += -L$(CONFIG_DIR)../../android-libs/x86 -L$(CONFIG_DIR)../../android-libs
-SOFLAGS += -L$(CONFIG_DIR)../../android-libs/x86 -L$(CONFIG_DIR)../../android-libs
+CFLAGS += -I$(CONFIG_DIR)../../output/android-libs
+DEPEND_FLAGS += -I$(CONFIG_DIR)../../output/android-libs
+LINKFLAGS += -L$(CONFIG_DIR)../../output/android-libs
+SOFLAGS += -L$(CONFIG_DIR)../../output/android-libs
 
 ifdef LISP_FEATURE_LARGEFILE
   CFLAGS += -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
