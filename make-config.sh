@@ -471,9 +471,9 @@ fi
 
 if [ -n "$SBCL_ANDROID_CROSS" ] && [ -d android-libs ]; then
     mkdir -p output/android-libs
-    cp android-libs/*.so android-libs/*.h output/android-libs
+    find android-libs -maxdepth 1 \( -name '*.so' -o -name '*.h' \) -exec cp '{}' output/android-libs \;
     if [ -d android-libs/$sbcl_arch ]; then
-        cp android-libs/$sbcl_arch/*.so android-libs/$sbcl_arch/*.h output/android-libs
+        find android-libs/$sbcl_arch -maxdepth 1 \( -name '*.so' -o -name '*.h' \) -exec cp '{}' output/android-libs \;
     fi
     # we need these early because of the -Wl,-no-as-needed flag for
     # the linker that might be used when groveling features
