@@ -111,6 +111,9 @@ do
       --android-api=)
         $optarg_ok && ANDROID_API=$optarg
         ;;
+      --android-target-location=)
+        $optarg_ok && SBCL_ANDROID_TARGET_LOCATION=$optarg
+        ;;
       --ndk=)
         $optarg_ok && NDK=$optarg
         ;;
@@ -292,7 +295,17 @@ if [ -n "$SBCL_TARGET_LOCATION" ]; then
     echo "SBCL_TARGET_LOCATION=\"$SBCL_TARGET_LOCATION\"; export SBCL_TARGET_LOCATION" >> output/build-config
 fi
 if [ -n "$SBCL_ANDROID_CROSS" ]; then
+    android_device_api="$(adb shell getprop ro.build.version.sdk)"
+    if [ "$android_device_api" -lt "$ANDROID_API" ]; then
+        echo "ERROR: Target device sdk version ($android_device_api) is less then ANDROID_API ($ANDROID_API)."
+        exit 1
+    fi
     echo "SBCL_ANDROID_CROSS=\"$SBCL_ANDROID_CROSS\"; export SBCL_ANDROID_CROSS" >> output/build-config
+    if [ -z "$SBCL_ANDROID_TARGET_LOCATION" ]; then
+        SBCL_ANDROID_TARGET_LOCATION=/data/local/tmp/sbcl
+    fi
+    echo "SBCL_ANDROID_TARGET_LOCATION=\"$SBCL_ANDROID_TARGET_LOCATION\"; export SBCL_ANDROID_TARGET_LOCATION" >> output/build-config
+    export SBCL_ANDROID_TARGET_LOCATION
 fi
 
 # And now, sorting out the per-target dependencies...
@@ -466,7 +479,7 @@ if [ -n "$SBCL_ANDROID_CROSS" ] && [ -d android-libs ]; then
     fi
     # we need these early because of the -Wl,-no-as-needed flag for
     # the linker that might be used when groveling features
-    (cd output/android-libs; adb push ./ /data/local/tmp/sbcl/output/android-libs/)
+    (cd output/android-libs; adb push ./ "$SBCL_ANDROID_TARGET_LOCATION/output/android-libs/")
 fi
 
 if [ -n "$SBCL_ANDROID_CROSS" ]

@@ -23,41 +23,44 @@ $SBCL_XC_HOST < tools-for-build/canonicalize-whitespace.lisp || exit 1
 ./make-target-1.sh
 ./make-host-2.sh
 
-adb push ./ /data/local/tmp/sbcl/
+adb push ./ "$SBCL_ANDROID_TARGET_LOCATION/"
 
-echo adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=/data/local/tmp/sbcl/output/android-libs SBCL_ANDROID_CROSS=true sh make-target-2.sh"
-adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=/data/local/tmp/sbcl/output/android-libs SBCL_ANDROID_CROSS=true sh make-target-2.sh"
+echo "adb shell \"cd \"$SBCL_ANDROID_TARGET_LOCATION\" ; LD_LIBRARY_PATH=\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh make-target-2.sh\""
+adb shell "cd \"$SBCL_ANDROID_TARGET_LOCATION\" ; LD_LIBRARY_PATH=\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh make-target-2.sh"
 
 # Hack needed to replace SB-GROVEL:RUN-C-COMPILER
 compile_one() {
     bin=temp-compile-from-android
-    adb pull /data/local/tmp/sbcl/contrib/asdf/$2 $bin.c
-    $CC $bin.c -o $bin
-    dest=$(echo $3 | sed 's/\r//g')  # On older android line terminates with \r
-    adb push $bin /data/local/tmp/sbcl/contrib/asdf/$dest
+    adb pull "$SBCL_ANDROID_TARGET_LOCATION/contrib/asdf/$2" "$bin.c"
+    $CC "$bin.c" -o "$bin"
+    dest="$3"
+    adb push "$bin" "$SBCL_ANDROID_TARGET_LOCATION/contrib/asdf/$dest"
     echo "done"
-    rm $bin
-    rm $bin.c
+    rm "$bin"
+    rm "$bin.c"
 }
 
-echo adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=/data/local/tmp/sbcl/output/android-libs SBCL_ANDROID_CROSS=true sh make-target-contrib-android.sh" "|" wrapper
-adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=/data/local/tmp/sbcl/output/android-libs SBCL_ANDROID_CROSS=true sh make-target-contrib-android.sh" | \
-    while read line ;
-      do echo "$line" ;
-      echo $line | grep "RUN-C-COMPILER" | while read line ; do compile_one $line ; done ;
+echo "adb shell \"cd \"$SBCL_ANDROID_TARGET_LOCATION\" ; LD_LIBRARY_PATH=\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh make-target-contrib-android.sh\""
+adb shell "cd \"$SBCL_ANDROID_TARGET_LOCATION\" ; LD_LIBRARY_PATH=\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh make-target-contrib-android.sh" | \
+    while read line ; do
+        line=$(echo "$line" | sed 's/\r//g')  # On older android line terminates with \r
+        echo "$line" ;
+        case "$line" in
+            RUN-C-COMPILER*) compile_one $line ;;
+        esac
     done
 
-echo adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=/data/local/tmp/sbcl/output/android-libs SBCL_ANDROID_CROSS=true sh make-post-checks.sh"
-adb shell "cd /data/local/tmp/sbcl ; LD_LIBRARY_PATH=/data/local/tmp/sbcl/output/android-libs SBCL_ANDROID_CROSS=true sh make-post-checks.sh"
+echo "adb shell \"cd \"$SBCL_ANDROID_TARGET_LOCATION\" ; LD_LIBRARY_PATH=\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh make-post-checks.sh\""
+adb shell "cd \"$SBCL_ANDROID_TARGET_LOCATION\" ; LD_LIBRARY_PATH=\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh make-post-checks.sh"
 
-adb pull /data/local/tmp/sbcl/obj
-adb pull /data/local/tmp/sbcl/output
+adb pull "$SBCL_ANDROID_TARGET_LOCATION/obj"
+adb pull "$SBCL_ANDROID_TARGET_LOCATION/output"
 
 ./make-shared-library.sh
 
 NPASSED=`ls obj/sbcl-home/contrib/sb-*.fasl | wc -l`
 echo
-echo "The build seems to have finished successfully, including $NPASSED (out of $NCONTRIBS)"
+echo "The build seems to have finished successfully, including $NPASSED"
 echo "contributed modules. If you would like to run more extensive tests on"
 echo "the new SBCL, you can try:"
 echo
