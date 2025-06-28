@@ -1,7 +1,7 @@
 android_run() {
     adb push $1 /data/local/tmp/temp.out > /dev/null
     adb shell chmod +x /data/local/tmp/temp.out > /dev/null
-    adb shell LD_LIBRARY_PATH=/data/local/tmp/sbcl/output/android-libs ./data/local/tmp/temp.out
+    adb shell "LD_LIBRARY_PATH=/data/local/tmp/sbcl/output/android-libs ./data/local/tmp/temp.out 2>/dev/null"
     adb shell rm /data/local/tmp/temp.out > /dev/null
 }
 
