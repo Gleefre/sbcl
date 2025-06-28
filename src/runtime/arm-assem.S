@@ -48,16 +48,22 @@ call_into_lisp:
 	@@ new lisp stack frame, so load the stack pointer into CFP.
 	@@ And we need the frame pointer, but OCFP is in use, so use
 	@@ NFP instead.
-	ldr	reg_NFP, .frame_pointer_address
-	ldr	reg_CFP, .stack_pointer_address
+	ldr	reg_NFP, .Lcurrent_control_frame_pointer
+	add	reg_NFP, pc
+	ldr	reg_NFP, [reg_NFP, #.Lcurrent_control_frame_pointer-4-.]
 	ldr	reg_NFP, [reg_NFP]
+	ldr	reg_CFP, .Lcurrent_control_stack_pointer
+	add	reg_CFP, pc
+	ldr	reg_CFP, [reg_CFP, #.Lcurrent_control_stack_pointer-4-.]
 	ldr	reg_CFP, [reg_CFP]
 
 	@@ Enter PSEUDO-ATOMIC.
 	str     pc, STATIC_SYMBOL_VALUE(PSEUDO_ATOMIC_ATOMIC)
 
 	@@ Clear FFCA, so the runtime knows that we're "in lisp".
-	ldr     reg_OCFP, =foreign_function_call_active
+	ldr	reg_OCFP, .Lforeign_function_call_active
+	add	reg_OCFP, pc
+	ldr	reg_OCFP, [reg_OCFP, #.Lforeign_function_call_active-4-.]
 	str     reg_R2, [reg_OCFP]
 
 	@@ We need to set up the lisp stack pointer and the basics of
@@ -108,14 +114,20 @@ call_into_lisp:
 	str     pc, STATIC_SYMBOL_VALUE(PSEUDO_ATOMIC_ATOMIC)
 
         @@ Save the lisp stack and frame pointers.
-	ldr	reg_NFP, .frame_pointer_address
+	ldr	reg_NFP, .Lcurrent_control_frame_pointer
+	add	reg_NFP, pc
+	ldr	reg_NFP, [reg_NFP, #.Lcurrent_control_frame_pointer-4-.]
 	str	reg_CFP, [reg_NFP]
         ldr     reg_NFP, STATIC_SYMBOL_VALUE(CONTROL_STACK_POINTER)
-	ldr	reg_OCFP, .stack_pointer_address
+	ldr	reg_OCFP, .Lcurrent_control_stack_pointer
+	add	reg_OCFP, pc
+	ldr	reg_OCFP, [reg_OCFP, #.Lcurrent_control_stack_pointer-4-.]
 	str	reg_NFP, [reg_OCFP]
 
 	@@ Set FFCA, so the runtime knows that we're not "in lisp".
-	ldr     reg_OCFP, =foreign_function_call_active
+	ldr	reg_OCFP, .Lforeign_function_call_active
+	add	reg_OCFP, pc
+	ldr	reg_OCFP, [reg_OCFP, #.Lforeign_function_call_active-4-.]
 	str     pc, [reg_OCFP]
 
 	@@ Leave PSEUDO-ATOMIC and check for interrupts.
@@ -129,8 +141,6 @@ call_into_lisp:
 	ldmfd	sp!, {r3-r11, lr}
 	bx	lr
 	.size	call_into_lisp, .-call_into_lisp
-.frame_pointer_address:	.word	current_control_frame_pointer
-.stack_pointer_address: .word	current_control_stack_pointer
 
 
 	.align
@@ -180,14 +190,20 @@ call_into_c:
 	str     pc, STATIC_SYMBOL_VALUE(PSEUDO_ATOMIC_ATOMIC)
 
         @@ Save the lisp stack and frame pointers.
-	ldr	reg_NFP, .stack_pointer_address
+	ldr	reg_NFP, .Lcurrent_control_stack_pointer
+	add	reg_NFP, pc
+	ldr	reg_NFP, [reg_NFP, #.Lcurrent_control_stack_pointer-4-.]
 	str	reg_R0, [reg_NFP]
         sub     reg_R0, reg_R0, #12
-	ldr	reg_NFP, .frame_pointer_address
+	ldr	reg_NFP, .Lcurrent_control_frame_pointer
+	add	reg_NFP, pc
+	ldr	reg_NFP, [reg_NFP, #.Lcurrent_control_frame_pointer-4-.]
 	str	reg_R0, [reg_NFP]
 
 	@@ Set FFCA, so the runtime knows that we're not "in lisp".
-	ldr     reg_NFP, =foreign_function_call_active
+	ldr	reg_NFP, .Lforeign_function_call_active
+	add	reg_NFP, pc
+	ldr	reg_NFP, [reg_NFP, #.Lforeign_function_call_active-4-.]
 	str     pc, [reg_NFP]
 
         @@ We're done with R0, and we need to use OCFP when leaving
@@ -239,16 +255,22 @@ call_into_c:
 	str     pc, STATIC_SYMBOL_VALUE(PSEUDO_ATOMIC_ATOMIC)
 
 	@@ Clear FFCA, so the runtime knows that we're "in lisp".
-	ldr     reg_OCFP, =foreign_function_call_active
+	ldr	reg_OCFP, .Lforeign_function_call_active
+	add	reg_OCFP, pc
+	ldr	reg_OCFP, [reg_OCFP, #.Lforeign_function_call_active-4-.]
 	str     reg_R2, [reg_OCFP]
 
         @@ Restore the Lisp stack and frame pointers, but store the
         @@ control frame pointer in reg_NFP (saving a register move
         @@ later).
-	ldr	reg_NFP, .stack_pointer_address
+	ldr	reg_NFP, .Lcurrent_control_stack_pointer
+	add	reg_NFP, pc
+	ldr	reg_NFP, [reg_NFP, #.Lcurrent_control_stack_pointer-4-.]
 	ldr	reg_CFP, [reg_NFP]
         str     reg_CFP, STATIC_SYMBOL_VALUE(CONTROL_STACK_POINTER)
-	ldr	reg_NFP, .frame_pointer_address
+	ldr	reg_NFP, .Lcurrent_control_frame_pointer
+	add	reg_NFP, pc
+	ldr	reg_NFP, [reg_NFP, #.Lcurrent_control_frame_pointer-4-.]
 	ldr	reg_NFP, [reg_NFP]
 
 	@@ Leave PSEUDO-ATOMIC and check for interrupts.
@@ -294,7 +316,9 @@ fun_end_breakpoint_end:
 name: \
         stmfd	sp!, {r4, r6, r12, lr} ;\
 \
-        ldr     r4, =foreign_function_call_active ;\
+        ldr     r4, .Lforeign_function_call_active ;\
+        add     r4, pc ;\
+        ldr     r4, [r4, #.Lforeign_function_call_active-4-.] ;\
         str     pc, [r4] ;\
 \
         ldr     r4, STATIC_SYMBOL_VALUE(CONTROL_STACK_POINTER) ;\
@@ -314,8 +338,10 @@ name: \
         ldr     r0,  [sp, #4*4] ;\
         vstmdb  sp!, {d0-d7} ;\
 \
+        ldr     r4, .L##entry ;\
+        add     r4, pc ;\
         mov     lr, pc ;\
-        ldr     pc,=entry ;\
+        ldr     pc, [r4, #.L##entry-.] ;\
 \
         vldmia sp!, {d0-d7} ;\
         str     r0,  [sp, #4*4] ;\
@@ -324,12 +350,16 @@ name: \
         sub     r4, r4, #8*4 ;\
         str     r4, STATIC_SYMBOL_VALUE(CONTROL_STACK_POINTER) ;\
 \
-        ldr     r4, =foreign_function_call_active ;\
+        ldr     r4, .Lforeign_function_call_active ;\
+        add     r4, pc ;\
+        ldr     r4, [r4, #.Lforeign_function_call_active-4-.] ;\
         mov     r6, #0 ;\
 	str     r6, [r4] ;\
 \
 	ldmfd	sp!, {r4, r6, r12, lr} ;\
-	bx	lr
+	bx	lr ;\
+\
+    .L##entry: .word entry(GOT_PREL)
 
 #ifdef LISP_FEATURE_GENCGC
 DEFINE_TRAMPOLINE(alloc_tramp, alloc)
@@ -350,6 +380,10 @@ do_pending_interrupt:
         .byte 0
         .byte 0
 	bx	lr
+
+.Lcurrent_control_frame_pointer: .word current_control_frame_pointer(GOT_PREL)
+.Lcurrent_control_stack_pointer: .word current_control_stack_pointer(GOT_PREL)
+.Lforeign_function_call_active: .word foreign_function_call_active(GOT_PREL)
 
 #ifdef __ELF__
 // Mark the object as not requiring an executable stack.
