@@ -17,34 +17,34 @@ fi
 # Hack needed to replace run-compiler.sh
 maybe_compile() {
     if [ "$1" = "ANDROID-RUN-C-COMPILER" ]; then
-        dir=$2
+        dir="$2"
         shift 2
         args=
         in=
         out=
         for arg; do
             if [ "$out" = "next" ]; then
-                case $arg in
-                    /*) out=$arg ;;
-                    *) out=$dir/$arg ;;
+                case "$arg" in
+                    /*) out="$arg" ;;
+                    *) out="$dir/$arg" ;;
                 esac
             else
-                case $arg in
-                    /*.c) in=$arg ;;
-                    *.c) in=$dir/$arg ;;
+                case "$arg" in
+                    /*.c) in="$arg" ;;
+                    *.c) in="$dir/$arg" ;;
                     -o) out="next" ;;
                     *) args="$args $arg" ;;
                 esac
             fi
         done
         temp=android_tempfile
-        adb pull $in $temp.c
-        echo $CC $args $temp.c -o $temp
-        $CC $args $temp.c -o $temp || echo "fail"
-        rm $temp.c
-        if [ -f $temp ]; then
-            adb push $temp $out
-            rm $temp
+        adb pull "$in" "$temp.c"
+        echo $CC $args "$temp.c" -o "$temp"
+        $CC $args "$temp.c" -o "$temp" || echo "fail"
+        rm "$temp.c"
+        if [ -f "$temp" ]; then
+            adb push "$temp" "$out"
+            rm "$temp"
             echo "done"
         fi
     fi
@@ -55,9 +55,9 @@ genheaders_pull_tempdir() {
         temp="$2"
         dir="$3"
         if [ "$dir" = "done" ]; then
-            rm -r $temp
+            rm -r "$temp"
         else
-            adb pull $dir $temp
+            adb pull "$dir" "$temp"
         fi
     fi
 }
@@ -68,14 +68,14 @@ make_reloc_test() {
            rm ../src/runtime/heap-reloc-test
         fi
         (cd ../src/runtime ; make heap-reloc-test)
-        adb push ../src/runtime/heap-reloc-test /data/local/tmp/sbcl/src/runtime/heap-reloc-test
+        adb push ../src/runtime/heap-reloc-test "$SBCL_ANDROID_TARGET_LOCATION/src/runtime/heap-reloc-test"
         rm ../src/runtime/heap-reloc-test
         echo "done"
     fi
 }
 
-echo "adb shell \"(cd /data/local/tmp/sbcl/tests; LD_LIBRARY_PATH=/data/local/tmp/sbcl/output/android-libs SBCL_ANDROID_CROSS=true ./run-tests.sh $@)\""
-adb shell "(cd /data/local/tmp/sbcl/tests; LD_LIBRARY_PATH=/data/local/tmp/sbcl/output/android-libs SBCL_ANDROID_CROSS=true ./run-tests.sh $@)" 2>&1 | \
+echo "adb shell \"(cd \"$SBCL_ANDROID_TARGET_LOCATION/tests\"; LD_LIBRARY_PATH=\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh run-tests.sh $@)\""
+adb shell "(cd \"$SBCL_ANDROID_TARGET_LOCATION/tests\"; LD_LIBRARY_PATH=\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh run-tests.sh $@)" 2>&1 | \
     while read line; do
         line=$(echo "$line" | sed 's/\r//g')  # On older android line terminates with \r
         echo "$line" ;
