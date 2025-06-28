@@ -74,7 +74,7 @@ call_into_lisp:
 	str     reg_NFP, [reg_OCFP, #-8]
 
 	@@ Set up the return address
-	ldr	reg_NL3, =.lra
+	adr	reg_NL3, .lra+OTHER_POINTER_LOWTAG
         str     reg_NL3, [reg_OCFP, #-4]
 
 	@@ Leave PSEUDO-ATOMIC and check for interrupts.
@@ -98,7 +98,7 @@ call_into_lisp:
 	add	reg_PC, reg_CODE, #SIMPLE_FUN_INSTS_OFFSET
 
 	.align 3
-	.equ	.lra, .+OTHER_POINTER_LOWTAG
+.lra:
 	.word	RETURN_PC_WIDETAG
 
 	@@ Correct stack pointer for return processing.
