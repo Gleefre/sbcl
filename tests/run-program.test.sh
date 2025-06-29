@@ -87,7 +87,8 @@ run_sbcl --eval "(defvar *exit-ok* $EXIT_LISP_WIN)" <<'EOF'
  #+unix
  (flet ((try (sb-impl::*default-external-format* x y)
          (let* ((process (run-program
-                          "/bin/sh" (list "-c" (format nil "echo ~c, $SB_TEST_FOO." x))
+                          (or #+android (posix-getenv "SHELL") "/bin/sh")
+                          (list "-c" (format nil "echo ~c, $SB_TEST_FOO." x))
                           :environment (list (format nil "SB_TEST_FOO=~c" y))
                           :output :stream
                           :wait t))
@@ -137,7 +138,8 @@ run_sbcl --eval "(defvar *exit-ok* $EXIT_LISP_WIN)" <<'EOF'
   ;; note: this test will be inconclusive if the child's stderr is
   ;; fully buffered.)
   (let ((str (with-output-to-string (s)
-               (our-run-program "/bin/sh"
+               (our-run-program #+android (or (posix-getenv "SHELL") "/bin/sh")
+                                #-android "/bin/sh"
                             '("-c" "(echo Foo; sleep 2; echo Bar)>&2")
                             :output s :search t :error :output :wait t))))
     (assert (string= str (format nil "Foo~%Bar~%"))))
