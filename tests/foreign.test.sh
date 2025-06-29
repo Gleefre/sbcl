@@ -39,10 +39,10 @@ build_so() (
   if [ $# -eq 2 ]
   then
     echo building $1.so from $2
-    /bin/sh ${run_compiler} -sbcl-pic -sbcl-shared "$2" -o "$1.so"
+    sh ${run_compiler} -sbcl-pic -sbcl-shared "$2" -o "$1.so"
   else
     echo building $1.so
-    /bin/sh ${run_compiler} -sbcl-pic -sbcl-shared "$1.c" -o "$1.so"
+    sh ${run_compiler} -sbcl-pic -sbcl-shared "$1.c" -o "$1.so"
   fi
 )
 
