@@ -255,8 +255,8 @@
 (deftest stat.5
     (let* ((stat-1 (sb-posix:stat "/"))
            (inode-1 (sb-posix:stat-ino stat-1))
-           (stat-2 (sb-posix:stat "/bin/sh"
-                                   stat-1))
+           (stat-2 (sb-posix:stat (or #+android (sb-ext:posix-getenv "SHELL") "/bin/sh")
+                                  stat-1))
            (inode-2 (sb-posix:stat-ino stat-2)))
       (values
        (eq stat-1 stat-2)
