@@ -34,7 +34,10 @@
     :ok))
 
 (defun cc (&rest arguments)
-  (apply #'run-no-output #+unix "./run-compiler.sh" #+win32 (or #+arm64 "clang" "gcc") arguments))
+  (apply #'run-no-output #+unix (or #+android (posix-getenv "SHELL") "/bin/sh")
+                         #+unix "run-compiler.sh"
+                         #+win32 (or #+arm64 "clang" "gcc")
+                         arguments))
 
 (defvar *required-alignment*
   (or #+arm 8

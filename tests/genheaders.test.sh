@@ -67,7 +67,7 @@ then
             echo Diffing $name against genesis and checking that it can stand alone
             diff $i ../src/runtime/genesis/$name
             echo "#include \"$temp/$(basename $i)\"" > ${src}
-            ./run-compiler.sh -I../src/runtime -c -o ${obj} ${src}
+            sh run-compiler.sh -I../src/runtime -c -o ${obj} ${src}
             rm ${obj}
         done
         echo "ANDROID-GENHEADERS-PULL-TEMPDIR $temp done"
@@ -78,7 +78,7 @@ then
             echo Diffing $name against genesis and checking that it can stand alone
             diff $i ../src/runtime/genesis/$name
             echo "#include \"$i\"" > ${src}
-            ./run-compiler.sh -I../src/runtime -c -o ${obj} ${src}
+            sh run-compiler.sh -I../src/runtime -c -o ${obj} ${src}
         done
     fi
 fi
