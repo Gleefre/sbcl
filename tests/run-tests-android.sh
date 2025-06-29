@@ -54,11 +54,14 @@ genheaders_pull_tempdir() {
     if [ "$1" = "ANDROID-GENHEADERS-PULL-TEMPDIR" ]; then
         temp="$2"
         dir="$3"
-        if [ "$dir" = "done" ]; then
+        flag="$4"
+        if [ "$dir" = "done" ] && [ -n "$temp" ] && [ -d "$temp" ]; then
             rm -r "$temp"
         else
             adb pull "$dir" "$temp"
+            adb shell "touch \"$flag\""
         fi
+        echo "done"
     fi
 }
 

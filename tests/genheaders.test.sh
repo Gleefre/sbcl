@@ -60,7 +60,14 @@ if [ -r $TEST_DIRECTORY/cons.h ]
 then
     if [ -n "${SBCL_ANDROID_CROSS:-}" ]; then
         temp=android_tempdir
-        echo "ANDROID-GENHEADERS-PULL-TEMPDIR $temp $TEST_DIRECTORY"
+        flag=$TEST_DIRECTORY/pulled
+        echo "ANDROID-GENHEADERS-PULL-TEMPDIR $temp $TEST_DIRECTORY $flag"
+        # KLUDGE: wait for the output file to appear
+        waited=0
+        while [ ! -f "$flag" ] && [ "$waited" -lt 100 ]; do
+            waited=$(expr $waited + 1)
+            sleep 0.1;
+        done
         for i in $TEST_DIRECTORY/*.h
         do
             name=`basename $i`
