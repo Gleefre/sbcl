@@ -174,7 +174,7 @@
   (unless (probe-file "threads-foreign.so")
     (with-open-file (o "threads-foreign.c" :direction :output :if-exists :supersede)
       (format o "void loop_forever() { while(1) ; }~%"))
-    (sb-ext:run-program "/bin/sh"
+    (sb-ext:run-program (or #+android (posix-getenv "SHELL") "/bin/sh")
                         '("run-compiler.sh" "-sbcl-pic" "-sbcl-shared"
                           "-o" "threads-foreign.so" "threads-foreign.c")
                         :output t :error :output)
@@ -545,7 +545,7 @@
 
 (with-test (:name :thread-alloca)
   (unless (probe-file "alloca.so")
-    (sb-ext:run-program "sh"
+    (sb-ext:run-program (or #+android (posix-getenv "SHELL") "/bin/sh")
                         '("run-compiler.sh" "-sbcl-pic" "-sbcl-shared"
                           "alloca.c" "-o" "alloca.so")
                         :output t :error :output

@@ -186,7 +186,7 @@
                                                     *error-output*))
 
               (cond ((string= (pathname-type file) "test")
-                     (let ((shell (or #+sunos (posix-getenv "SHELL") "/bin/sh")))
+                     (let ((shell (or #+(or android sunos) (posix-getenv "SHELL") "/bin/sh")))
                        ;; exec the shell with the test and we'll pick up its exit code
                        (alien-funcall (extern-alien "execl" (function int c-string c-string
                                                                       &optional c-string unsigned))

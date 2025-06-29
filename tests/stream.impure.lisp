@@ -647,7 +647,8 @@
 ;;; was wrong.  CSR managed to promote the wrongness to all streams in
 ;;; the 1.0.32.x series, breaking slime instantly.
 (with-test (:name (read-char :no-hang-after unread-char))
-  (let* ((process #-win32 (run-program "/bin/sh" '("-c" "echo a && sleep 10")
+  (let* ((process #-win32 (run-program (or #+android (posix-getenv "SHELL") "/bin/sh")
+                                       '("-c" "echo a && sleep 10")
                                        :output :stream :wait nil)
                   #+win32 (run-program
                            "cmd.exe" '("/c" "(echo a) && (%SystemRoot%\\System32\\timeout 10 > nul )")
@@ -702,7 +703,7 @@
                                 (sleep most-positive-fixnum))))))
                     (t
                      (setf proc
-                           (run-program "/bin/sh"
+                           (run-program (or #+android (posix-getenv "SHELL") "/bin/sh")
                                    (list "-c"
                                          (format nil "cat > ~A" (native-namestring fifo)))
                                    :input :stream

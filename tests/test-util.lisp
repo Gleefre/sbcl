@@ -1137,7 +1137,7 @@
                             `("-shared" "-o" ,solib ,file)
                             :search t)
         #-win32
-        (sb-ext:run-program "/bin/sh"
+        (sb-ext:run-program (or #+android (posix-getenv "SHELL") "/bin/sh")
                             `("run-compiler.sh" "-sbcl-pic" "-sbcl-shared"
                               "-o" ,solib ,file)
                             :output t :error :output)

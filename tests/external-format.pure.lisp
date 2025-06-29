@@ -1336,7 +1336,8 @@
     (test :io)
     (test-error
      (handler-case
-         (run-program "sh" '() :input :stream :external-format :bad-format)
+         (run-program (or #+android (posix-getenv "SHELL") "/bin/sh")
+                      '() :input :stream :external-format :bad-format)
        (error (e) e)))
     (test-error
      (handler-case

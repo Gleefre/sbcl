@@ -271,8 +271,8 @@
                        (with-output-to-string (s)
                          (setf stream s)
                          (setf process
-                               (run-program "/bin/sh" '("-c" "echo OK; exit 42") :pty s
-                                                                                 :wait nil))
+                               (run-program (or #+android (posix-getenv "SHELL") "/bin/sh")
+                                            '("-c" "echo OK; exit 42") :pty s :wait nil))
                          (process-wait process)
                          (assert (= (process-exit-code process) 42))
                          s)))))))
@@ -367,7 +367,7 @@
   (let* ((directory #-win32 "/"
                     #+win32 "c:\\")
          (out (process-output
-               (run-program #-win32 "/bin/sh"
+               (run-program #-win32 (or #+android (posix-getenv "SHELL") "/bin/sh")
                             #-win32 '("-c" "pwd")
                             #+win32 "cmd.exe"
                             #+win32 '("/c" "cd")
@@ -379,7 +379,7 @@
             (string-right-trim '(#\Return) (read-line out))))))
 
 (with-test (:name (run-program :directory-nil))
-  (run-program #-win32 "/bin/sh"
+  (run-program #-win32 (or #+android (posix-getenv "SHELL") "/bin/sh")
                #-win32 '("-c" "pwd")
                #+win32 "cmd.exe"
                #+win32 '("/c" "cd")
@@ -388,7 +388,7 @@
 
 (with-test (:name (run-program :bad-options))
   (assert-error
-   (run-program #-win32 "/bin/sh"
+   (run-program #-win32 (or #+android (posix-getenv "SHELL") "/bin/sh")
                 #-win32 '("-c" "pwd")
                 #+win32 "cmd.exe"
                 #+win32 '("/c" "cd")

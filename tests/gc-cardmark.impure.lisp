@@ -31,7 +31,7 @@
                             (:not (:and :gencgc :compact-instance-header :soft-card-marks)))
             :fails-on (and :darwin :x86-64)) ;; can't compile the .so
   (unless (probe-file "gc-testlib.so")
-    (sb-ext:run-program "sh"
+    (sb-ext:run-program (or #+android (posix-getenv "SHELL") "/bin/sh")
                         `("run-compiler.sh" "-sbcl-pic" "-sbcl-shared"
                           #+darwin ,@'("-flat_namespace" "-undefined" "suppress"  "-mmacosx-version-min=10.7")
                           "-I../src/runtime"

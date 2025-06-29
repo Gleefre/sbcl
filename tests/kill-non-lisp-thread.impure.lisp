@@ -24,7 +24,8 @@
 
 (defvar *delete* nil)
 (unless (probe-file "kill-non-lisp-thread.so")
-  (run-no-output "/bin/sh" "run-compiler.sh" "-sbcl-pic" "-sbcl-shared"
+  (run-no-output (or #+android (posix-getenv "SHELL") "/bin/sh")
+                 "run-compiler.sh" "-sbcl-pic" "-sbcl-shared"
                  "-O3" "-I" "../src/runtime/"
                  "kill-non-lisp-thread.c" "-o" "kill-non-lisp-thread.so")
   (setq *delete* t))

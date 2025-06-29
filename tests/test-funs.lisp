@@ -87,7 +87,7 @@
     (test-util::setenv "TEST_SBCL_EVALUATOR_MODE"
                         (string-downcase *test-evaluator-mode*))
     ;; Why would it ever be wrong to use (posix-getenv "SHELL") ???
-    (let ((process (sb-ext:run-program (or #+(or sunos win32) (posix-getenv "SHELL")
+    (let ((process (sb-ext:run-program (or #+(or sunos win32 android) (posix-getenv "SHELL")
                                            "/bin/sh")
                                        (list (native-namestring file))
                                        :output *error-output*)))
