@@ -43,7 +43,7 @@ then
         for i in $TEST_DIRECTORY/*.h
         do
             echo "#include \"$temp/$(basename $i)\"" > ${src}
-            ./run-compiler.sh -I../src/runtime -c -o ${obj} ${src}
+            sh run-compiler.sh -I../src/runtime -c -o ${obj} ${src}
             rm ${obj}
         done
         echo "ANDROID-GENHEADERS-PULL-TEMPDIR $temp done"
@@ -51,7 +51,7 @@ then
         for i in $TEST_DIRECTORY/*.h
         do
             echo "#include \"$i\"" > ${src}
-            ./run-compiler.sh -I../src/runtime -c -o ${obj} ${src}
+            sh run-compiler.sh -I../src/runtime -c -o ${obj} ${src}
         done
     fi
 fi
