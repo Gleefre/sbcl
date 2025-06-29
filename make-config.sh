@@ -401,7 +401,7 @@ if [ ! -d output ] ; then mkdir output; fi
 echo //guessing default target CPU architecture from host architecture
 if [ -n "$SBCL_ANDROID_CROSS" ]
 then
-    uname_arch=`adb shell "uname -m 2>/dev/null || getprop ro.product.cpu.abi"`
+    uname_arch=`(adb shell "uname -m 2>/dev/null || getprop ro.product.cpu.abi") | sed 's/\r//g'`
 else
     uname_arch=`uname -m`
 fi
