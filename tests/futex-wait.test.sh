@@ -95,7 +95,11 @@ strace -f -e futex -e signal=\!sigsegv -o $tracelog \
 (test)
 EOF
 
-n=`awk 'END{print NR}' < $tracelog`
+if [ -n "$SBCL_ANDROID_CROSS" ]; then
+    n=`wc -l < $tracelog`
+else
+    n=`awk 'END{print NR}' < $tracelog`
+fi
 rm $tracelog
 
 if [ $n -le $expect_test_outcome ]
