@@ -9,7 +9,7 @@ CC=$TOOLCHAIN/bin/$TARGET_TAG$ANDROID_API-clang
 if ! command -v adb >/dev/null 2>&1; then
     echo "ADB not found, can't cross-test for Android"
     exit 1
-elif ! adb shell "echo"; then
+elif ! adb $SBCL_ADB_OPTIONS shell "echo"; then
     echo "adb shell not working. Is the Android device connected?"
     exit 1
 fi
@@ -38,12 +38,12 @@ maybe_compile() {
             fi
         done
         temp=android_tempfile
-        adb pull "$in" "$temp.c"
+        adb $SBCL_ADB_OPTIONS pull "$in" "$temp.c"
         echo $CC $args "$temp.c" -o "$temp"
         $CC $args "$temp.c" -o "$temp" || echo "fail"
         rm "$temp.c"
         if [ -f "$temp" ]; then
-            adb push "$temp" "$out"
+            adb $SBCL_ADB_OPTIONS push "$temp" "$out"
             rm "$temp"
             echo "done"
         fi
@@ -58,8 +58,8 @@ genheaders_pull_tempdir() {
         if [ "$dir" = "done" ] && [ -n "$temp" ] && [ -d "$temp" ]; then
             rm -r "$temp"
         else
-            adb pull "$dir" "$temp"
-            adb shell "touch \"$flag\""
+            adb $SBCL_ADB_OPTIONS pull "$dir" "$temp"
+            adb $SBCL_ADB_OPTIONS shell "touch \"$flag\""
         fi
         echo "done"
     fi
@@ -71,14 +71,14 @@ make_reloc_test() {
            rm ../src/runtime/heap-reloc-test
         fi
         (cd ../src/runtime ; make heap-reloc-test)
-        adb push ../src/runtime/heap-reloc-test "$SBCL_ANDROID_TARGET_LOCATION/src/runtime/heap-reloc-test"
+        adb $SBCL_ADB_OPTIONS push ../src/runtime/heap-reloc-test "$SBCL_ANDROID_TARGET_LOCATION/src/runtime/heap-reloc-test"
         rm ../src/runtime/heap-reloc-test
         echo "done"
     fi
 }
 
-echo "adb shell \"(cd \\\"$SBCL_ANDROID_TARGET_LOCATION/tests\\\"; LD_LIBRARY_PATH=\\\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\\\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh run-tests.sh $@)\""
-adb shell "(cd \"$SBCL_ANDROID_TARGET_LOCATION/tests\"; LD_LIBRARY_PATH=\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh run-tests.sh $@)" 2>&1 | \
+echo "adb $SBCL_ADB_OPTIONS shell \"(cd \\\"$SBCL_ANDROID_TARGET_LOCATION/tests\\\"; LD_LIBRARY_PATH=\\\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\\\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh run-tests.sh $@)\""
+adb $SBCL_ADB_OPTIONS shell "(cd \"$SBCL_ANDROID_TARGET_LOCATION/tests\"; LD_LIBRARY_PATH=\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh run-tests.sh $@)" 2>&1 | \
     while read line; do
         line=$(echo "$line" | sed 's/\r//g')  # On older android line terminates with \r
         echo "$line" ;

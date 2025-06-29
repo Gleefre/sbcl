@@ -49,9 +49,6 @@ perform_host_lisp_check=no
 fancy=false
 some_options=false
 android=false
-if [ -z "$ANDROID_API" ]; then
-    ANDROID_API=21
-fi
 for option
 do
   optarg_ok=true
@@ -113,6 +110,9 @@ do
         ;;
       --android-target-location=)
         $optarg_ok && SBCL_ANDROID_TARGET_LOCATION=$optarg
+        ;;
+      --adb-options=)
+        $optarg_ok && SBCL_ADB_OPTIONS=$optarg
         ;;
       --ndk=)
         $optarg_ok && NDK=$optarg
@@ -295,17 +295,34 @@ if [ -n "$SBCL_TARGET_LOCATION" ]; then
     echo "SBCL_TARGET_LOCATION=\"$SBCL_TARGET_LOCATION\"; export SBCL_TARGET_LOCATION" >> output/build-config
 fi
 if [ -n "$SBCL_ANDROID_CROSS" ]; then
-    android_device_api="$(adb shell getprop ro.build.version.sdk)"
+    if [ -z "$SBCL_ADB_OPTIONS" ]; then
+        SBCL_ADB_OPTIONS=""
+    fi
+    if [ -z "$SBCL_ANDROID_TARGET_LOCATION" ]; then
+        SBCL_ANDROID_TARGET_LOCATION=/data/local/tmp/sbcl
+    fi
+    if [ -z "$ANDROID_API" ]; then
+        ANDROID_API=21
+    fi
+
+    if ! command -v adb >/dev/null 2>&1; then
+        echo "ADB not found, can't cross-compile for Android"
+        exit 1
+    elif ! adb $SBCL_ADB_OPTIONS shell "echo"; then
+        echo "adb shell not working. Is the Android device connected?"
+        exit 1
+    fi
+
+    android_device_api="$(adb $SBCL_ADB_OPTIONS shell getprop ro.build.version.sdk)"
     if [ "$android_device_api" -lt "$ANDROID_API" ]; then
         echo "ERROR: Target device sdk version ($android_device_api) is less then ANDROID_API ($ANDROID_API)."
         exit 1
     fi
+
     echo "SBCL_ANDROID_CROSS=\"$SBCL_ANDROID_CROSS\"; export SBCL_ANDROID_CROSS" >> output/build-config
-    if [ -z "$SBCL_ANDROID_TARGET_LOCATION" ]; then
-        SBCL_ANDROID_TARGET_LOCATION=/data/local/tmp/sbcl
-    fi
     echo "SBCL_ANDROID_TARGET_LOCATION=\"$SBCL_ANDROID_TARGET_LOCATION\"; export SBCL_ANDROID_TARGET_LOCATION" >> output/build-config
-    export SBCL_ANDROID_TARGET_LOCATION
+    echo "SBCL_ADB_OPTIONS=\"$SBCL_ADB_OPTIONS\"; export SBCL_ADB_OPTIONS" >> output/build-config
+    export SBCL_ANDROID_TARGET_LOCATION SBCL_ADB_OPTIONS
 fi
 
 # And now, sorting out the per-target dependencies...
@@ -401,7 +418,7 @@ if [ ! -d output ] ; then mkdir output; fi
 echo //guessing default target CPU architecture from host architecture
 if [ -n "$SBCL_ANDROID_CROSS" ]
 then
-    uname_arch=`(adb shell "uname -m 2>/dev/null || getprop ro.product.cpu.abi") | sed 's/\r//g'`
+    uname_arch=`(adb $SBCL_ADB_OPTIONS shell "uname -m 2>/dev/null || getprop ro.product.cpu.abi") | sed 's/\r//g'`
 else
     uname_arch=`uname -m`
 fi
@@ -490,7 +507,7 @@ if [ -n "$SBCL_ANDROID_CROSS" ] && [ -d android-libs ]; then
     fi
     # we need these early because of the -Wl,-no-as-needed flag for
     # the linker that might be used when groveling features
-    (cd output/android-libs; adb push ./ "$SBCL_ANDROID_TARGET_LOCATION/output/android-libs/")
+    (cd output/android-libs; adb $SBCL_ADB_OPTIONS push ./ "$SBCL_ANDROID_TARGET_LOCATION/output/android-libs/")
 fi
 
 if [ -n "$SBCL_ANDROID_CROSS" ]
@@ -699,7 +716,8 @@ case "$sbcl_os" in
             printf ' :darwin-jit :gcc-tls' >> $ltf
         fi
         if [ -n "$SBCL_ANDROID_CROSS" ]; then
-            # FIXME: this probably works, but needs to be tested
+            # FIXME: cross-build with NDK relies on sbcl_os=linux.  Other than
+            # that, there is no obvious reason why this can't work.
             echo "Cross-compiling for Android with NDK and ADB is not supported on darwin"
             exit 1
         fi
