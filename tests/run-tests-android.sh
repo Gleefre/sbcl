@@ -77,7 +77,7 @@ make_reloc_test() {
     fi
 }
 
-echo "adb shell \"(cd \"$SBCL_ANDROID_TARGET_LOCATION/tests\"; LD_LIBRARY_PATH=\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh run-tests.sh $@)\""
+echo "adb shell \"(cd \\\"$SBCL_ANDROID_TARGET_LOCATION/tests\\\"; LD_LIBRARY_PATH=\\\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\\\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh run-tests.sh $@)\""
 adb shell "(cd \"$SBCL_ANDROID_TARGET_LOCATION/tests\"; LD_LIBRARY_PATH=\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh run-tests.sh $@)" 2>&1 | \
     while read line; do
         line=$(echo "$line" | sed 's/\r//g')  # On older android line terminates with \r

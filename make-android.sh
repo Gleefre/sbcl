@@ -25,7 +25,7 @@ $SBCL_XC_HOST < tools-for-build/canonicalize-whitespace.lisp || exit 1
 
 adb push ./ "$SBCL_ANDROID_TARGET_LOCATION/"
 
-echo "adb shell \"cd \"$SBCL_ANDROID_TARGET_LOCATION\" ; LD_LIBRARY_PATH=\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh make-target-2.sh\""
+echo "adb shell \"cd \\\"$SBCL_ANDROID_TARGET_LOCATION\\\" ; LD_LIBRARY_PATH=\\\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\\\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh make-target-2.sh\""
 adb shell "cd \"$SBCL_ANDROID_TARGET_LOCATION\" ; LD_LIBRARY_PATH=\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh make-target-2.sh"
 
 # Hack needed to replace SB-GROVEL:RUN-C-COMPILER
@@ -40,7 +40,7 @@ compile_one() {
     rm "$bin.c"
 }
 
-echo "adb shell \"cd \"$SBCL_ANDROID_TARGET_LOCATION\" ; LD_LIBRARY_PATH=\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh make-target-contrib-android.sh\""
+echo "adb shell \"cd \\\"$SBCL_ANDROID_TARGET_LOCATION\\\" ; LD_LIBRARY_PATH=\\\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\\\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh make-target-contrib-android.sh\""
 adb shell "cd \"$SBCL_ANDROID_TARGET_LOCATION\" ; LD_LIBRARY_PATH=\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh make-target-contrib-android.sh" | \
     while read line ; do
         line=$(echo "$line" | sed 's/\r//g')  # On older android line terminates with \r
@@ -50,7 +50,7 @@ adb shell "cd \"$SBCL_ANDROID_TARGET_LOCATION\" ; LD_LIBRARY_PATH=\"$SBCL_ANDROI
         esac
     done
 
-echo "adb shell \"cd \"$SBCL_ANDROID_TARGET_LOCATION\" ; LD_LIBRARY_PATH=\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh make-post-checks.sh\""
+echo "adb shell \"cd \\\"$SBCL_ANDROID_TARGET_LOCATION\\\" ; LD_LIBRARY_PATH=\\\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\\\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh make-post-checks.sh\""
 adb shell "cd \"$SBCL_ANDROID_TARGET_LOCATION\" ; LD_LIBRARY_PATH=\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh make-post-checks.sh"
 
 adb pull "$SBCL_ANDROID_TARGET_LOCATION/obj"
