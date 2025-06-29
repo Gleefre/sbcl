@@ -489,8 +489,9 @@
   (when (probe-file "/dev/fd")
     (with-open-file (stream "/dev/null")
       (let* ((fd (sb-sys:fd-stream-fd stream))
-             (process (run-program "test" (list "-e" (format nil "/dev/fd/~a" fd))
-                                   :search t)))
+             (process #-android (run-program "test" (list "-e" (format nil "/dev/fd/~a" fd)) :search t)
+                      #+android (run-program (or (posix-getenv "SHELL") "/system/bin/sh")
+                                             (list "-c" (format nil "test -e /dev/fd/~a" fd)))))
         (assert (not (zerop (process-exit-code process))))))))
 
 ;; PROCESS-CLOSE's contract is "close the streams and stop updating
