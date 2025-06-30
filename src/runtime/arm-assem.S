@@ -8,6 +8,16 @@
 
 #define STATIC_SYMBOL_VALUE(sym) [reg_NULL, #(((sym)-NIL)+SYMBOL_VALUE_OFFSET)]
 
+#ifdef LISP_FEATURE_ANDROID
+#define LOAD_VAR(dest, x) \
+	ldr	dest, .L##x ;\
+	add	dest, pc ;\
+	ldr	dest, [dest, #.L##x-4-.]
+#else
+#define LOAD_VAR(dest, x) \
+	ldr	dest, =##x
+#endif
+
 .known_nil:
 	.word	NIL
 	.align
@@ -47,22 +57,16 @@ call_into_lisp:
 	@@ new lisp stack frame, so load the stack pointer into CFP.
 	@@ And we need the frame pointer, but OCFP is in use, so use
 	@@ NFP instead.
-	ldr	reg_NFP, .Lcurrent_control_frame_pointer
-	add	reg_NFP, pc
-	ldr	reg_NFP, [reg_NFP, #.Lcurrent_control_frame_pointer-4-.]
+	LOAD_VAR(reg_NFP, current_control_frame_pointer)
 	ldr	reg_NFP, [reg_NFP]
-	ldr	reg_CFP, .Lcurrent_control_stack_pointer
-	add	reg_CFP, pc
-	ldr	reg_CFP, [reg_CFP, #.Lcurrent_control_stack_pointer-4-.]
+	LOAD_VAR(reg_CFP, current_control_stack_pointer)
 	ldr	reg_CFP, [reg_CFP]
 
 	@@ Enter PSEUDO-ATOMIC.
 	str     pc, STATIC_SYMBOL_VALUE(PSEUDO_ATOMIC_ATOMIC)
 
 	@@ Clear FFCA, so the runtime knows that we're "in lisp".
-	ldr	reg_OCFP, .Lforeign_function_call_active
-	add	reg_OCFP, pc
-	ldr	reg_OCFP, [reg_OCFP, #.Lforeign_function_call_active-4-.]
+	LOAD_VAR(reg_OCFP, foreign_function_call_active)
 	str     reg_R2, [reg_OCFP]
 
 	@@ We need to set up the lisp stack pointer and the basics of
@@ -106,19 +110,13 @@ call_into_lisp:
 	str     pc, STATIC_SYMBOL_VALUE(PSEUDO_ATOMIC_ATOMIC)
 
         @@ Save the lisp stack and frame pointers.
-	ldr	reg_NFP, .Lcurrent_control_frame_pointer
-	add	reg_NFP, pc
-	ldr	reg_NFP, [reg_NFP, #.Lcurrent_control_frame_pointer-4-.]
+	LOAD_VAR(reg_NFP, current_control_frame_pointer)
 	str	reg_CFP, [reg_NFP]
-	ldr	reg_OCFP, .Lcurrent_control_stack_pointer
-	add	reg_OCFP, pc
-	ldr	reg_OCFP, [reg_OCFP, #.Lcurrent_control_stack_pointer-4-.]
+	LOAD_VAR(reg_OCFP, current_control_stack_pointer)
 	str	reg_CSP, [reg_OCFP]
 
 	@@ Set FFCA, so the runtime knows that we're not "in lisp".
-	ldr	reg_OCFP, .Lforeign_function_call_active
-	add	reg_OCFP, pc
-	ldr	reg_OCFP, [reg_OCFP, #.Lforeign_function_call_active-4-.]
+	LOAD_VAR(reg_OCFP, foreign_function_call_active)
 	str     pc, [reg_OCFP]
 
 	@@ Leave PSEUDO-ATOMIC and check for interrupts.
@@ -164,20 +162,14 @@ call_into_c:
 	str     pc, STATIC_SYMBOL_VALUE(PSEUDO_ATOMIC_ATOMIC)
 
         @@ Save the lisp stack and frame pointers.
-	ldr	reg_NFP, .Lcurrent_control_stack_pointer
-	add	reg_NFP, pc
-	ldr	reg_NFP, [reg_NFP, #.Lcurrent_control_stack_pointer-4-.]
+	LOAD_VAR(reg_NFP, current_control_stack_pointer)
 	str	reg_CSP, [reg_NFP]
         sub     reg_R0, reg_CSP, #8
-	ldr	reg_NFP, .Lcurrent_control_frame_pointer
-	add	reg_NFP, pc
-	ldr	reg_NFP, [reg_NFP, #.Lcurrent_control_frame_pointer-4-.]
+	LOAD_VAR(reg_NFP, current_control_frame_pointer)
 	str	reg_R0, [reg_NFP]
 
 	@@ Set FFCA, so the runtime knows that we're not "in lisp".
-	ldr	reg_NFP, .Lforeign_function_call_active
-	add	reg_NFP, pc
-	ldr	reg_NFP, [reg_NFP, #.Lforeign_function_call_active-4-.]
+	LOAD_VAR(reg_NFP, foreign_function_call_active)
 	str     pc, [reg_NFP]
 
         @@ We're done with R0, and we need to use OCFP when leaving
@@ -228,22 +220,16 @@ call_into_c:
 	str     pc, STATIC_SYMBOL_VALUE(PSEUDO_ATOMIC_ATOMIC)
 
 	@@ Clear FFCA, so the runtime knows that we're "in lisp".
-	ldr	reg_OCFP, .Lforeign_function_call_active
-	add	reg_OCFP, pc
-	ldr	reg_OCFP, [reg_OCFP, #.Lforeign_function_call_active-4-.]
+	LOAD_VAR(reg_OCFP, foreign_function_call_active)
 	str     reg_R2, [reg_OCFP]
 
         @@ Restore the Lisp stack and frame pointers, but store the
         @@ control frame pointer in reg_NFP (saving a register move
         @@ later).
-	ldr	reg_NFP, .Lcurrent_control_stack_pointer
-	add	reg_NFP, pc
-	ldr	reg_NFP, [reg_NFP, #.Lcurrent_control_stack_pointer-4-.]
+	LOAD_VAR(reg_NFP, current_control_stack_pointer)
 	ldr	reg_CFP, [reg_NFP]
         mov     reg_CSP, reg_CFP
-	ldr	reg_NFP, .Lcurrent_control_frame_pointer
-	add	reg_NFP, pc
-	ldr	reg_NFP, [reg_NFP, #.Lcurrent_control_frame_pointer-4-.]
+	LOAD_VAR(reg_NFP, current_control_frame_pointer)
 	ldr	reg_NFP, [reg_NFP]
 
 	@@ Leave PSEUDO-ATOMIC and check for interrupts.
@@ -279,6 +265,18 @@ fun_end_breakpoint_end:
 @@ preprocessor noise. There's no reason it can't be done, but we lack
 @@ instruction encoders for: stmfd, ldmfd, stmea, ldmea, fstmfdd, fldfdd.
 
+#ifdef LISP_FEATURE_ANDROID
+#define JUMP_VAR(scratch_reg, x) \
+        ldr     scratch_reg, .L##x ;\
+        add     scratch_reg, pc ;\
+        mov     lr, pc ;\
+        ldr     pc, [scratch_reg, #.L##x-.]
+#else
+#define JUMP_VAR(scratch_reg, x) \
+        mov     lr, pc ;\
+        ldr     pc, =##x
+#endif
+
 #define DEFINE_TRAMPOLINE(name, entry) \
 	.align ;\
 	.global	name ;\
@@ -286,9 +284,7 @@ fun_end_breakpoint_end:
 name: \
         stmfd	sp!, {r4, r6, r12, lr} ;\
 \
-        ldr     r4, .Lforeign_function_call_active ;\
-        add     r4, pc ;\
-        ldr     r4, [r4, #.Lforeign_function_call_active-4-.] ;\
+        LOAD_VAR(r4, foreign_function_call_active) ;\
         str     pc, [r4] ;\
 \
         mov     r4, reg_CSP ;\
@@ -306,30 +302,34 @@ name: \
         ldr     r0,  [sp, #4*4] ;\
         vstmdb  sp!, {d0-d7} ;\
 \
-        ldr     r4, .L##entry ;\
-        add     r4, pc ;\
-        mov     lr, pc ;\
-        ldr     pc, [r4, #.L##entry-.] ;\
+        JUMP_VAR(r4, entry) ;\
 \
         vldmia sp!, {d0-d7} ;\
         str     r0,  [sp, #4*4] ;\
         ldmea   reg_CSP, {r0-reg_LEXENV, r8} ;\
         sub     reg_CSP, reg_CSP, #8*4 ;\
 \
-        ldr     r4, .Lforeign_function_call_active ;\
-        add     r4, pc ;\
-        ldr     r4, [r4, #.Lforeign_function_call_active-4-.] ;\
+        LOAD_VAR(r4, foreign_function_call_active) ;\
         mov     r6, #0 ;\
 	str     r6, [r4] ;\
 \
 	ldmfd	sp!, {r4, r6, r12, lr} ;\
-	bx	lr ;\
-\
-    .L##entry: .word entry(GOT_PREL)
+	bx	lr
 
 #ifdef LISP_FEATURE_GENCGC
 DEFINE_TRAMPOLINE(alloc_tramp, alloc)
 DEFINE_TRAMPOLINE(list_alloc_tramp, alloc_list)
+#endif
+
+#ifdef LISP_FEATURE_ANDROID
+.Lalloc: .word alloc(GOT_PREL)
+.Lalloc_list: .word alloc_list(GOT_PREL)
+#endif
+
+#ifdef LISP_FEATURE_ANDROID
+.Lcurrent_control_frame_pointer: .word current_control_frame_pointer(GOT_PREL)
+.Lcurrent_control_stack_pointer: .word current_control_stack_pointer(GOT_PREL)
+.Lforeign_function_call_active: .word foreign_function_call_active(GOT_PREL)
 #endif
 
         .align
@@ -346,10 +346,6 @@ do_pending_interrupt:
         .byte 0
         .byte 0
 	bx	lr
-
-.Lcurrent_control_frame_pointer: .word current_control_frame_pointer(GOT_PREL)
-.Lcurrent_control_stack_pointer: .word current_control_stack_pointer(GOT_PREL)
-.Lforeign_function_call_active: .word foreign_function_call_active(GOT_PREL)
 
 #ifdef __ELF__
 // Mark the object as not requiring an executable stack.
