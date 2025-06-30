@@ -357,15 +357,19 @@ GNAME(lspmain):
 	pushl	%ebp		# Save old frame pointer.
 	movl	%esp,%ebp	# Establish new frame.
 #ifndef LISP_FEATURE_WIN32
+#ifdef LISP_FEATURE_ANDROID
 	call	__x86.get_pc_thunk.ax
 	addl	$_GLOBAL_OFFSET_TABLE_, %eax
 	movl	GNAME(all_threads)@GOT(%eax),%eax
 	movl	(%eax),%eax
+#else
+	movl	GNAME(all_threads),%eax
+#endif
 	/* pthread machinery takes care of this for other threads */
 	movl    THREAD_CONTROL_STACK_END_OFFSET(%eax) ,%esp
 #else
 /* Win32 -really- doesn't like you switching stacks out from under it. */
-	movl	GNAME(all_threads),%eax  // FIXME: this seems to be unused? (also: use GOT ? - probably no need on Win32)
+	movl	GNAME(all_threads),%eax
 #endif
 	jmp     Lstack
 
@@ -762,6 +766,7 @@ ascs_finished:
 	ret
 	SIZE(GNAME(arch_scrub_control_stack))
 
+#ifdef LISP_FEATURE_ANDROID
 /* utilities to obtain PC used for getting the GOT address */
 	.text
 	.globl	__x86.get_pc_thunk.ax
@@ -772,3 +777,4 @@ __x86.get_pc_thunk.ax:
 	movl	(%esp), %eax
 	ret
 	SIZE(__x86.get_pc_thunk.ax)
+#endif
