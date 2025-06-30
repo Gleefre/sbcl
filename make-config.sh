@@ -156,7 +156,7 @@ then
   cat <<EOF
 \`make.sh' drives the SBCL build.
 
-Usage: $0 [OPTION]...
+Usage: make.sh [OPTION]...
 
   Important: make.sh does not currently control the entirety of the
   build: configuration file customize-target-features.lisp and certain
@@ -240,8 +240,102 @@ Options:
        user@host-machine:/home/user/sbcl
                   Transfer the files to/from directory /home/user/sbcl
                   on host-machine.
+EOF
+  if [ -n "$SBCL_ANDROID_CROSS" ]; then
+    cat <<EOF
+
+\`make-android.sh' drives the SBCL Android cross-build using Android NDK.
+
+Usage: make-android.sh [OPTION]...
+
+  Warning: The Android NDK cross-build toolchain for SBCL is not
+  stable yet, breaking changes are possible.
+
+  All of the make.sh options apply to this script as well.
+
+  To cross-build SBCL for Android:
+
+    1) Install the Android SDK and NDK. Set up the NDK environment
+       variable, and make sure that \`adb' can be found through PATH.
+
+    2) An android device connected to ADB is required during the
+       build. This can be an emulator, or a physical android device
+       with USB debugging enabled in developer options.
+
+       You can choose the specific device to be used with by passing
+       the --adb-options build option (see below).
+
+    3) Optional: Put additional prebuilt shared libraries and headers
+       into ./android-libs or ./android-libs/<arch>, where <arch> is
+       the target architecture recognized by sbcl.
+
+       <arch> should be one of x86-64, arm64, x86, arm.
+
+           Note: while x86 and arm are present in this list, these
+           archtectures are not yet supported and are here for the
+           sake of completeness only.
+
+       The following libraries are meaningful:
+       - libzstd.so      This is required for core compression.
+
+         The following headers are also required:
+           zstd.h, zstd_errors.h, zdict.h
+
+       - libcapstone.so  This is required for the sb-capstone contrib.
+       - libgmp.so       This is required for the sb-gmp contrib.
+       - libmpfr.so      This is required for the sb-mpfr contrib.
+
+    4) Run the ./make-android.sh script.
+
+       This will copy the source directory onto the target device and
+       use it for genesis, to compile the sbcl core, and to compile
+       sbcl contribs. This directory can be later used to run tests.
+
+       You can choose the specific directory to be used with by
+       passing the --android-target-location option (see below).
+
+    5) Optional: run tests with run-tests-android.sh:
+
+         (cd tests; ./run-tests-android.sh)
+
+    6) Optional: run sbcl from the adb shell (change the path to the
+       sbcl directory if needed):
+
+         adb shell /data/local/tmp/sbcl/run-sbcl.sh
+
+make-android.sh specific options:
+  --ndk=<string>       Location of the Android NDK toolchain
+
+      Overrides the NDK environment variable.
+
+  --android-api=<number> Minimum android api to target.
+
+      Must be supported by the NDK and the target android
+      device. Overrides the ANDROID_API environment variable.
+
+      Default api is: 21
+
+  --android-target-location=<string> The directory used on the android device.
+
+      Must be an absolute path. Usually will be a subdirectory of /data/local/tmp.
+
+      Default android target location is: /data/local/tmp/sbcl
+
+  --adb-options=<string> Additional options to be passed to ADB.
+
+      This can be used to select the target android device if there
+      are multiple connected devices.
+
+      Examples:
+        -e          can be used to select the TCP/IP device (e.g. emulator)
+        -d          can be used to select the USB device (e.g. an actual device)
+        -s SERIAL   can be used to select the device with give SERIAL number
+        -t ID       can be used to select the device with given transport id
+
+      See  adb help  for more documentation.
 
 EOF
+  fi
   exit 1
 fi
 
