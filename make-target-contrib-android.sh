@@ -32,15 +32,26 @@ build_asdf () {
 
 build_system () {
     SYSTEM="$1"
-    MODULE_REQUIRES="$2 $3"
+    MODULE_REQUIRES=""
+
+    case " $SBCL_CONTRIB_BLOCKLIST " in
+        *" $SYSTEM "*) return 0 ;;
+    esac
+
+    shift
+    for dep
+    do
+      case $dep in
+          *.so) [ ! -f "output/android-libs/$dep" ] && return 0 ;;
+          *) [ ! -f "obj/sbcl-home/contrib/$dep.fasl" ] && return 0;
+             MODULE_REQUIRES="$MODULE_REQUIRES $dep" ;;
+      esac
+    done
 
     export FASL=$DEST/$SYSTEM.fasl
     export ASD=$DEST/$SYSTEM.asd
 
-    cd contrib/$SYSTEM
-    $SBCL --load ../make-contrib.lisp "$SYSTEM" $MODULE_REQUIRES </dev/null
-
-    cd $SBCL_TOP
+    ( cd contrib/$SYSTEM; $SBCL --load ../make-contrib.lisp "$SYSTEM" $MODULE_REQUIRES </dev/null )
 }
 
 build_asdf
@@ -52,18 +63,12 @@ build_system sb-introspect
 build_system sb-cltl2
 build_system sb-aclrepl
 build_system sb-sprof
-if [ -f output/android-libs/libcapstone.so ]; then
-    build_system sb-capstone
-fi
+build_system sb-capstone libcapstone.so
 build_system sb-rotate-byte
 build_system sb-md5 sb-rotate-byte
 build_system sb-executable
-if [ -f output/android-libs/libgmp.so ]; then
-    build_system sb-gmp
-    if [ -f output/android-libs/libmpfr.so ]; then
-        build_system sb-mpfr sb-gmp
-    fi
-fi
+build_system sb-gmp libgmp.so
+build_system sb-mpfr libmpfr.so sb-gmp
 build_system sb-concurrency
 build_system sb-queue sb-concurrency
 build_system sb-rt
