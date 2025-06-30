@@ -50,6 +50,9 @@ adb $SBCL_ADB_OPTIONS pull "$SBCL_ANDROID_TARGET_LOCATION/output"
 
 ./make-shared-library.sh
 
+# Push libsbcl.so for completeness
+adb $SBCL_ADB_OPTIONS push ./src/runtime/libsbcl.so "$SBCL_ANDROID_TARGET_LOCATION/src/runtime/libsbcl.so"
+
 NPASSED=`ls obj/sbcl-home/contrib/sb-*.fasl | wc -l`
 echo
 echo "The build seems to have finished successfully, including $NPASSED"
