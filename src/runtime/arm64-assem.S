@@ -37,7 +37,7 @@
 #define SIZE(name) .size name,.-name
 #define GNAME(var) var
 
-#ifdef LIBSBCL
+#if defined(LIBSBCL) || defined(LISP_FEATURE_ANDROID)
 .macro  LOAD_GNAME, dest, symbol
     adrp    \dest, :got:\symbol
     ldr     \dest, [\dest, #:got_lo12:\symbol]
