@@ -42,7 +42,7 @@ exefile=$TEST_DIRECTORY/sbcl-new-elf
 cc -no-pie -o ${exefile} -Wl,--export-dynamic -Wl,-no-as-needed \
    ${temp}-src.s ${temp}-src-core.o ../src/runtime/libsbcl.a -lm -ldl ${m_arg}
 
-result=`${exefile} --eval \
+result=`${exefile} $SBCL_ARGS --eval \
    '(if (alien-funcall (extern-alien "gc_managed_heap_space_p" (function (boolean 8) unsigned))
                        sb-vm:text-space-start) (princ "Success"))' --quit`
 echo $result
@@ -52,7 +52,7 @@ then
 else
   exit 1
 fi
-result=`${exefile} --eval '(defun fib (n) (if (<= n 1) 1 (+ (fib (- n 1)) (fib (- n 2)))))' \
+result=`${exefile} $SBCL_ARGS --eval '(defun fib (n) (if (<= n 1) 1 (+ (fib (- n 1)) (fib (- n 2)))))' \
   --eval "(compile 'fib)" \
   --eval "(if (equal (loop for i from 2 to 5 collect (fib i)) '(2 3 5 8)) (print 'ok))" --quit`
 if [ $result = OK ]
@@ -63,7 +63,7 @@ else
 fi
 
 set +e # no exit on error
-${exefile} --noprint n<<EOF
+${exefile} $SBCL_ARGS --noprint n<<EOF
 (in-package sb-impl)
 (defun expand-pkg-iterator (&rest whatever) whatever :bork-bork-bork)
 ;; the macro-function contains a JMP to expand-pkg-iterator
