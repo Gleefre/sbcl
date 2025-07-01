@@ -851,7 +851,8 @@ case "$sbcl_arch" in
 
     if [ -n "$SBCL_ANDROID_CROSS" ]; then
         $GNUMAKE -C tools-for-build avx2 2> /dev/null
-        if ! android_run tools-for-build/avx2 ; then
+        exit_code=`(cd tools-for-build; [ -f avx2 ] && android_run_for_exit_code avx2)`;
+        if [ -n "$exit_code" ] && [ "$exit_code" -eq 0 ]; then
             SBCL_CONTRIB_BLOCKLIST="$SBCL_CONTRIB_BLOCKLIST sb-simd"
         fi
     else

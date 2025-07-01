@@ -74,6 +74,6 @@ build_system sb-queue sb-concurrency
 build_system sb-rt
 build_system sb-simple-streams sb-posix sb-bsd-sockets
 build_system sb-cover sb-md5
-# build_system sb-simd
+build_system sb-simd
 build_system sb-grovel asdf
 build_system sb-perf sb-posix
