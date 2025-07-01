@@ -467,7 +467,7 @@ case `uname` in
 esac
 
 link_or_copy() {
-   if [ "$sbcl_os" = "win32" ] ; then
+   if [ "$sbcl_os" = "win32" ] || [ "$android" = "true" ]; then
       # Use preprocessor or makefile includes instead of copying if
       # possible, to avoid unexpected use of the original, unchanged
       # files when re-running only make-target-1 during development.
@@ -478,9 +478,6 @@ link_or_copy() {
       else
          cp -r "$1" "$2"
       fi
-   elif $android ; then
-       # adb push doesn't like symlinks on unrooted devices.
-       cp -r "$1" "$2"
    else
        ln -s "$1" "$2"
    fi
