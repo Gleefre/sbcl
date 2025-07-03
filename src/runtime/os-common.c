@@ -306,10 +306,17 @@ void* load_core_bytes(int fd, os_vm_offset_t offset, os_vm_address_t addr, os_vm
      * any use of a potentially hooked mmap() API within this file. */
      actual = mmap(
 #endif
+#if defined(LISP_FEATURE_ANDROID) && !defined(LISP_FEATURE_64_BIT)
+                  addr, len, protection | OS_VM_PROT_WRITE,
+                  // Do not pass MAP_FIXED with addr of 0, because most OSes disallow that.
+                  MAP_ANONYMOUS | MAP_PRIVATE | (addr ? MAP_FIXED : 0),
+                  -1, (off_t) 0);
+#else
                   addr, len, protection,
                   // Do not pass MAP_FIXED with addr of 0, because most OSes disallow that.
                   sharing | (addr ? MAP_FIXED : 0),
                   fd, (off_t) offset);
+#endif
     if (actual == MAP_FAILED) {
         if (errno == ENOMEM)
             fprintf(stderr, "load_core_bytes: mmap(%p,%zu,...) failed with ENOMEM\n", addr, len);
@@ -321,6 +328,27 @@ void* load_core_bytes(int fd, os_vm_offset_t offset, os_vm_address_t addr, os_vm
     }
     if (fail)
         lose("load_core_bytes(%d,%p,%p,%zx) failed", fd, (void*)(uintptr_t)offset, addr, len);
+#if defined(LISP_FEATURE_ANDROID) && !defined(LISP_FEATURE_64_BIT)
+    os_vm_offset_t position = lseek(fd, 0, SEEK_CUR);
+    lseek(fd, offset, SEEK_SET); // might need lseek_largefile?
+    addr = actual;
+    os_vm_size_t rest = len;
+    while (rest) {
+        ssize_t count = read(fd, addr, rest);
+
+        if (count <= -1) {
+            perror("read");
+            lose("read(%d,%p,%d) failed", fd, (void*)(uintptr_t)addr, rest);
+        }
+
+        addr += count;
+        rest -= count;
+    }
+    if ((protection & OS_VM_PROT_WRITE) == 0) {
+        os_protect(actual, len, protection);
+    }
+    lseek(fd, position, SEEK_SET);
+#endif
     return (void*)actual;
 }
 
