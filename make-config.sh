@@ -317,7 +317,9 @@ make-android.sh specific options:
 
   --android-target-location=<string> The directory used on the android device.
 
-      Must be an absolute path. Usually will be a subdirectory of /data/local/tmp.
+      Usually a subdirectory of /data/local/tmp.
+
+      If the path is relative, it will be placed under /data/local/tmp.
 
       Default android target location is: /data/local/tmp/sbcl
 
@@ -395,6 +397,9 @@ if [ -n "$SBCL_ANDROID_CROSS" ]; then
     if [ -z "$SBCL_ANDROID_TARGET_LOCATION" ]; then
         SBCL_ANDROID_TARGET_LOCATION=/data/local/tmp/sbcl
     fi
+    case "$SBCL_ANDROID_TARGET_LOCATION" in
+        /*) ;; *) SBCL_ANDROID_TARGET_LOCATION="/data/local/tmp/$SBCL_ANDROID_TARGET_LOCATION"
+    esac
     if [ -z "$ANDROID_API" ]; then
         ANDROID_API=21
     fi
