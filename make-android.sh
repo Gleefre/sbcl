@@ -23,13 +23,13 @@ adb $SBCL_ADB_OPTIONS shell "cd \"$SBCL_ANDROID_TARGET_LOCATION\" ; LD_LIBRARY_P
 # Hack needed to replace SB-GROVEL:RUN-C-COMPILER
 compile_one() {
     bin=temp-compile-from-android
-    adb $SBCL_ADB_OPTIONS pull "$SBCL_ANDROID_TARGET_LOCATION/contrib/asdf/$2" "$bin.c"
-    $CC "$bin.c" -o "$bin"
+    adb $SBCL_ADB_OPTIONS pull "$SBCL_ANDROID_TARGET_LOCATION/contrib/asdf/$2" "tools-for-build/$bin.c"
+    ( cd tools-for-build; make "$bin" -I ../src/runtime )
     dest="$3"
-    adb $SBCL_ADB_OPTIONS push "$bin" "$SBCL_ANDROID_TARGET_LOCATION/contrib/asdf/$dest"
+    adb $SBCL_ADB_OPTIONS push "tools-for-build/$bin" "$SBCL_ANDROID_TARGET_LOCATION/contrib/asdf/$dest"
     echo "done"
-    rm "$bin"
-    rm "$bin.c"
+    rm "tools-for-build/$bin"
+    rm "tools-for-build/$bin.c"
 }
 
 echo "adb $SBCL_ADB_OPTIONS shell \"cd \\\"$SBCL_ANDROID_TARGET_LOCATION\\\" ; LD_LIBRARY_PATH=\\\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\\\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh make-target-contrib-android.sh\""
