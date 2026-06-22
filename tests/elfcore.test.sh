@@ -19,7 +19,7 @@
 # tests in this file do, so try it first. If this can't be run, neither can
 # anything else.
 run_sbcl <<EOF
-  #+(and linux (or arm64 x86-64)) (exit :code 0) ; good
+  #+(and linux (or arm64 x86-64) (not android)) (exit :code 0) ; good
   (exit :code 2) ; otherwise
 EOF
 status=$?
