@@ -36,13 +36,42 @@ else
 fi
 SBCL_ARGS="${TEST_SBCL_ARGS:---disable-ldb --noinform --no-sysinit --no-userinit --noprint --disable-debugger}"
 
+# on very old androids dirname is not always available
+if ! command -v dirname >/dev/null 2>&1; then
+    dirname() {
+        case "$1" in
+            /) echo / ;;
+            */) dirname "${1%/*}" ;;
+            */*) echo "${1%/*}" ;;  # FIXME: this doesn't remove trailing slashes
+            *) echo .
+        esac
+    }
+fi
+
+# on very old androids basename is not always available
+if ! command -v basename >/dev/null 2>&1; then
+    basename() {
+        case "$1" in
+            /) echo / ;;
+            */) basename "${1%/*}" ;;
+            */*) echo "${1##*/}" ;;
+            *) echo "$1"
+        esac
+    }
+fi
 
 # Tests should probably not care about their own name.
 script_basename=`basename $0`
+# on old androids sed is not available
+if ! command -v sed >/dev/null 2>&1; then
+    TEST_FILESTEM=`basename "${script_basename}" | sed -e 's/\.sh$//' -e 's/\./-/g'`
+else
+    TEST_DIRECTORY="$(basename "$script_basename")"
+    TEST_DIRECTORY="${TEST_DIRECTORY%.sh}"
+    # even old android shells seem to support ${//}
+    TEST_DIRECTORY="${TEST_DIRECTORY//./-}"
+fi
 # Scripts that use this variable should quote it.
-TEST_FILESTEM=`basename "${script_basename}" | sed -e 's/\.sh$//' -e 's/\./-/g'`
-
-TEST_DIRECTORY="${SBCL_PWD}/${TEST_FILESTEM}-$$"
 export TEST_DIRECTORY
 
 # "Ten four" is the closest numerical slang I can find to "OK", so

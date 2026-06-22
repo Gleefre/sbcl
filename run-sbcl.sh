@@ -13,6 +13,18 @@
 
 set -e
 
+# on very old androids dirname is not always available
+if ! command -v dirname >/dev/null 2>&1; then
+    dirname() {
+        case "$1" in
+            /) echo / ;;
+            */) dirname "${1%/*}" ;;
+            */*) echo "${1%/*}" ;;  # FIXME: this doesn't remove trailing slashes
+            *) echo .
+        esac
+    }
+fi
+
 this="$0"
 
 build_directory_p(){

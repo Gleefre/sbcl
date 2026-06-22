@@ -92,8 +92,22 @@ rm ./run-sbcl-absolute-symlink.sh
 # Test whether we can run-sbcl.sh through a symlink to a relative
 # path.
 echo "testing run-sbcl.sh when it's a symlink to a relative path"
+
+relative_path_to_root_helper () {
+    case "$1" in
+        /) echo "" ;;
+        /*) relative_path_to_root_helper "${1#/}" "..";;
+        */*) relative_path_to_root_helper "${1#*/}" "../$2";;
+        *) echo "$2"
+    esac
+}
+
+relative_path_to_root () {
+    echo $(relative_path_to_root_helper $(pwd -P))
+}
+
 # good god, what does this sed command even do?
-ln -s $(pwd | sed 's|^/||; s|[^/][^/]*|..|g')/"$run_sbcl_path" ./run-sbcl-relative-symlink.sh
+ln -s $(relative_path_to_root)/"$run_sbcl_path" ./run-sbcl-relative-symlink.sh
 test_run_sbcl ./run-sbcl-relative-symlink.sh
 rm ./run-sbcl-relative-symlink.sh
 
