@@ -595,6 +595,13 @@ if [ "$sbcl_arch" = "" ] ; then
     exit 1
 fi
 
+if [ -n "$SBCL_ANDROID_CROSS" ]; then
+    # This needs to be able to run on the host machine, compile it
+    # here before we start using the NDK toolchain.
+    echo //building perfecthash
+    $GNUMAKE -C tools-for-build perfecthash || true
+fi
+
 if [ -n "$SBCL_ANDROID_CROSS" ] && [ -d android-libs ]; then
     mkdir -p output/android-libs
     find android-libs -maxdepth 1 \( -name '*.so' -o -name '*.h' \) -exec cp '{}' output/android-libs \;
