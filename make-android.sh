@@ -1,7 +1,6 @@
 #!/bin/sh
 set -e
 
-build_started=`date`
 export SBCL_ANDROID_CROSS=true
 
 ./make-config.sh "$@" --with-android --without-gcc-tls --check-host-lisp || exit $?
@@ -9,16 +8,35 @@ export SBCL_ANDROID_CROSS=true
 . output/prefix.def
 . output/build-config
 
+echo //building host tools
+# Build the perfect-hash-generator. It's actually OK if this fails,
+# as long as xperfecthash.lisp-expr is up-to-date
+$GNUMAKE -C tools-for-build perfecthash || true
+
+build_started=`date`
+echo "//Starting build: $build_started"
+# Apparently option parsing succeeded. Print out the results.
+echo "//Options: --xc-host='$SBCL_XC_HOST' --android-target-location='$SBCL_ANDROID_TARGET_LOCATION'"
+
+# Enforce the source policy for no bogus whitespace
 $SBCL_XC_HOST < tools-for-build/canonicalize-whitespace.lisp || exit 1
 
-./make-host-1.sh
-./make-target-1.sh
-./make-host-2.sh
+maybetime() {
+    if command -v time > /dev/null ; then
+        time $@
+    else
+        $@
+    fi
+}
+
+maybetime sh make-host-1.sh
+maybetime sh make-target-1.sh
+maybetime sh make-host-2.sh
 
 adb $SBCL_ADB_OPTIONS push ./ "$SBCL_ANDROID_TARGET_LOCATION/"
 
 echo "adb $SBCL_ADB_OPTIONS shell \"cd \\\"$SBCL_ANDROID_TARGET_LOCATION\\\" ; LD_LIBRARY_PATH=\\\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\\\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh make-target-2.sh\""
-adb $SBCL_ADB_OPTIONS shell "cd \"$SBCL_ANDROID_TARGET_LOCATION\" ; LD_LIBRARY_PATH=\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh make-target-2.sh"
+maybetime adb $SBCL_ADB_OPTIONS shell "cd \"$SBCL_ANDROID_TARGET_LOCATION\" ; LD_LIBRARY_PATH=\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh make-target-2.sh"
 
 # Hack needed to replace SB-GROVEL:RUN-C-COMPILER
 compile_one() {
@@ -33,7 +51,7 @@ compile_one() {
 }
 
 echo "adb $SBCL_ADB_OPTIONS shell \"cd \\\"$SBCL_ANDROID_TARGET_LOCATION\\\" ; LD_LIBRARY_PATH=\\\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\\\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh make-target-contrib-android.sh\""
-adb $SBCL_ADB_OPTIONS shell "cd \"$SBCL_ANDROID_TARGET_LOCATION\" ; LD_LIBRARY_PATH=\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh make-target-contrib-android.sh" | \
+maybetime adb $SBCL_ADB_OPTIONS shell "cd \"$SBCL_ANDROID_TARGET_LOCATION\" ; LD_LIBRARY_PATH=\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh make-target-contrib-android.sh" | \
     while read line ; do
         line=$(echo "$line" | sed 's/\r//g')  # On older android line terminates with \r
         echo "$line" ;
@@ -43,12 +61,12 @@ adb $SBCL_ADB_OPTIONS shell "cd \"$SBCL_ANDROID_TARGET_LOCATION\" ; LD_LIBRARY_P
     done
 
 echo "adb $SBCL_ADB_OPTIONS shell \"cd \\\"$SBCL_ANDROID_TARGET_LOCATION\\\" ; LD_LIBRARY_PATH=\\\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\\\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh make-post-checks.sh\""
-adb $SBCL_ADB_OPTIONS shell "cd \"$SBCL_ANDROID_TARGET_LOCATION\" ; LD_LIBRARY_PATH=\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh make-post-checks.sh"
+maybetime adb $SBCL_ADB_OPTIONS shell "cd \"$SBCL_ANDROID_TARGET_LOCATION\" ; LD_LIBRARY_PATH=\"$SBCL_ANDROID_TARGET_LOCATION/output/android-libs\" SBCL_ANDROID_CROSS=true TMPDIR=/data/local/tmp sh make-post-checks.sh"
 
 adb $SBCL_ADB_OPTIONS pull "$SBCL_ANDROID_TARGET_LOCATION/obj"
 adb $SBCL_ADB_OPTIONS pull "$SBCL_ANDROID_TARGET_LOCATION/output"
 
-./make-shared-library.sh
+maybetime sh make-shared-library.sh
 
 # Push libsbcl.so for completeness
 adb $SBCL_ADB_OPTIONS push ./src/runtime/libsbcl.so "$SBCL_ANDROID_TARGET_LOCATION/src/runtime/libsbcl.so"
@@ -64,10 +82,6 @@ echo
 echo "To build documentation:"
 echo
 echo "  cd ./doc/manual && make"
-echo
-echo "To install SBCL (more information in INSTALL):"
-echo
-echo "  sh install.sh"
 
 build_finished=`date`
 echo
