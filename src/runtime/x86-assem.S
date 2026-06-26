@@ -486,8 +486,8 @@ LsingleValue:
 	frstor  (%esp)
 	addl	$108, %esp
 
-	popl	%ebp		# c-sp
 	movl	%edx,%eax	# c-val
+	leave
 	ret
 	SIZE(GNAME(call_into_lisp))
 
